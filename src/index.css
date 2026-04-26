@@ -143,18 +143,7 @@ body {
   max-height: 500px;
 }
 
-/* FAB */
-.fab-btn {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 50;
-  transition: all 0.25s ease;
-}
-.fab-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.5), 0 8px 25px rgba(0,0,0,0.5);
-}
+/* FAB — dihapus, tombol selesai kini inline */
 
 /* Table */
 .table-row:hover td {
@@ -191,8 +180,45 @@ body {
 
 .spin-anim { animation: spin 1s linear infinite; }
 
-/* SVG circle progress */
-.circle-progress {
+/* ── KaTeX overrides untuk dark theme ── */
+.katex {
+  font-size: 1em;
+  color: inherit;
+}
+.katex-display {
+  margin: 0.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em 0;
+}
+.katex-display > .katex {
+  white-space: normal;
+}
+/* Pastikan KaTeX tidak overflow di card kecil */
+.katex-html {
+  overflow-x: auto;
+}
+
+/* ── Pembahasan step block ── */
+.pembahasan-step {
+  counter-increment: step-counter;
+}
+.pembahasan-step::before {
+  content: counter(step-counter);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,229,255,0.15);
+  color: #00E5FF;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
