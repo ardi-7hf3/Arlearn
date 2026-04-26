@@ -6,24 +6,40 @@ import UploadSoalModal from './UploadSoalModal';
 import FormatUploadModal from './FormatUploadModal';
 
 const CONTOH_JS = `export const tambahanSoal = [
+  // ── Soal biasa (plain text) ──────────────────────────────────────
   {
     id: 11,
-    teks: "Apa kepanjangan dari ARLearn?",
+    teks: "Apa kepanjangan dari CPU?",
     pilihan: [
-      "Augmented Reality Learn",
-      "Advanced Remote Learn",
-      "Active Reading Learn",
-      "Auto Response Learn"
+      "Central Processing Unit",
+      "Core Processing Unit",
+      "Central Program Utility",
+      "Computer Processing Unit"
     ],
     jawabanBenar: 0,
-    penjelasan: "ARLearn singkatan dari Augmented Reality Learning"
+    penjelasan: "CPU adalah Central Processing Unit, otak dari komputer.",
+    pembahasan: "CPU (Central Processing Unit) adalah komponen utama komputer yang menjalankan instruksi program. CPU terdiri dari ALU untuk operasi matematika, CU untuk mengatur aliran data, dan Register untuk penyimpanan sementara."
   },
+
+  // ── Soal matematika dengan LaTeX ─────────────────────────────────
+  // PENTING: dalam string JS, backslash ditulis DOUBLE (\\\\frac bukan \\frac)
   {
     id: 12,
-    teks: "Framework mana yang digunakan ARLearn?",
-    pilihan: ["Vue.js", "Angular", "React", "Svelte"],
-    jawabanBenar: 2,
-    penjelasan: "ARLearn dibangun dengan React + Vite untuk performa optimal."
+    teks: "Nilai dari $\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x}$ adalah ...",
+    pilihan: ["$0$", "$1$", "$\\\\infty$", "Tidak terdefinisi"],
+    jawabanBenar: 1,
+    penjelasan: "Limit fundamental: $\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x} = 1$",
+    pembahasan: "Ini adalah limit fundamental trigonometri.\\n\\nBukti dengan L\\'Hôpital:\\n$$\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x} = \\\\lim_{x \\\\to 0} \\\\frac{\\\\cos x}{1} = 1$$\\n\\nNilai ini sangat penting dalam kalkulus dan sering digunakan sebagai dasar pembuktian lainnya."
+  },
+
+  // ── Soal dengan rumus blok (display math $$...$$) ────────────────
+  {
+    id: 13,
+    teks: "Diketahui $f(x) = x^3 - 6x^2 + 9x + 1$. Titik kritis fungsi tersebut berada di ...",
+    pilihan: ["$x = 1$ dan $x = 3$", "$x = 2$ dan $x = 4$", "$x = 0$ dan $x = 3$", "$x = 1$ dan $x = 4$"],
+    jawabanBenar: 0,
+    penjelasan: "Titik kritis saat $f'(x) = 0$: $3x^2 - 12x + 9 = 0 \\\\Rightarrow x = 1$ atau $x = 3$",
+    pembahasan: "Untuk mencari titik kritis, turunkan $f(x)$ dan samakan dengan nol.\\n\\n$$f'(x) = 3x^2 - 12x + 9$$\\n\\nSelesaikan $f'(x) = 0$:\\n$$3x^2 - 12x + 9 = 0$$\\n$$x^2 - 4x + 3 = 0$$\\n$$(x-1)(x-3) = 0$$\\n\\nJadi titik kritis: $x = 1$ dan $x = 3$."
   }
 ];`;
 

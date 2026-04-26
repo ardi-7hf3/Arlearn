@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getRiwayat, deleteRiwayat, formatTanggal } from '../utils/riwayatStorage';
 import CustomAlert from './CustomAlert';
+import LatexRenderer from './LatexRenderer';
 
 function DetailModal({ show, data, onClose }) {
   const [openAcc, setOpenAcc] = useState(null);
@@ -28,13 +29,13 @@ function DetailModal({ show, data, onClose }) {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 p-5 pb-3">
           {[
-            { label: 'Skor', value: data.skor, color: '#00E5FF', icon: '⭐' },
-            { label: 'Benar', value: data.benar, color: '#10B981', icon: '✅' },
-            { label: 'Salah', value: data.salah, color: '#EF4444', icon: '❌' },
+            { label: 'Skor', value: data.skor, color: '#00E5FF', icon: 'fa-solid fa-star' },
+            { label: 'Benar', value: data.benar, color: '#10B981', icon: 'fa-solid fa-circle-check' },
+            { label: 'Salah', value: data.salah, color: '#EF4444', icon: 'fa-solid fa-circle-xmark' },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-3 text-center"
               style={{ background: '#0B1121', border: '1px solid #1E293B' }}>
-              <div className="text-lg">{s.icon}</div>
+              <i className={`${s.icon} text-lg mb-1 block`} style={{ color: s.color }} />
               <div className="font-display font-black text-xl" style={{ color: s.color }}>{s.value}</div>
               <div className="text-xs" style={{ color: '#64748B' }}>{s.label}</div>
             </div>
@@ -55,8 +56,11 @@ function DetailModal({ show, data, onClose }) {
                     onClick={() => setOpenAcc(isOpen ? null : i)}>
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                       style={{ background: isBenar ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: isBenar ? '#10B981' : '#EF4444' }}>{i + 1}</div>
-                    <span className="flex-1 text-sm line-clamp-1" style={{ color: '#94A3B8' }}>{s.teks}</span>
-                    <span>{isBenar ? '✅' : '❌'}</span>
+                    <span className="flex-1 text-sm line-clamp-1" style={{ color: '#94A3B8' }}>
+                        {s.teks.replace(/\$[\s\S]*?\$/g,'[LaTeX]').slice(0,70)}
+                      </span>
+                    <i className={`fa-solid ${isBenar ? 'fa-circle-check' : 'fa-circle-xmark'} text-sm`}
+                          style={{ color: isBenar ? '#10B981' : '#EF4444' }} />
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                       style={{ color: '#475569', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>
                       <polyline points="6,9 12,15 18,9"/>
@@ -70,7 +74,7 @@ function DetailModal({ show, data, onClose }) {
                             background: j === s.jawabanBenar ? 'rgba(16,185,129,0.1)' : (j === data.jawabanUser?.[i] && !isBenar) ? 'rgba(239,68,68,0.08)' : 'transparent',
                             color: j === s.jawabanBenar ? '#10B981' : (j === data.jawabanUser?.[i] && !isBenar) ? '#EF4444' : '#64748B',
                           }}>
-                          <span className="font-bold">{labelOpts[j]}.</span> {opt}
+                          <span className="font-bold">{labelOpts[j]}.</span> <LatexRenderer text={opt} />
                         </div>
                       ))}
                     </div>
@@ -120,7 +124,10 @@ export default function RiwayatPage() {
 
       {riwayat.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4">📭</div>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: '#111827', border: '1px solid #1E293B' }}>
+            <i className="fa-solid fa-inbox text-3xl" style={{ color: '#334155' }} />
+          </div>
           <p className="font-display font-semibold text-lg mb-1" style={{ color: '#64748B' }}>Belum Ada Riwayat</p>
           <p className="text-sm" style={{ color: '#334155' }}>Selesaikan tryout pertamamu untuk melihat riwayat di sini</p>
         </div>
@@ -153,13 +160,17 @@ export default function RiwayatPage() {
                   {/* Mini progress bars */}
                   <div className="space-y-1.5 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs w-12 text-right" style={{ color: '#10B981' }}>✅ {item.benar}</span>
+                      <span className="text-xs w-14 text-right flex items-center justify-end gap-1" style={{ color: '#10B981' }}>
+                        <i className="fa-solid fa-circle-check text-xs" /> {item.benar}
+                      </span>
                       <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#1E293B' }}>
                         <div className="h-full rounded-full" style={{ width: `${(item.benar / item.totalSoal) * 100}%`, background: '#10B981' }} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs w-12 text-right" style={{ color: '#EF4444' }}>❌ {item.salah}</span>
+                      <span className="text-xs w-14 text-right flex items-center justify-end gap-1" style={{ color: '#EF4444' }}>
+                        <i className="fa-solid fa-circle-xmark text-xs" /> {item.salah}
+                      </span>
                       <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#1E293B' }}>
                         <div className="h-full rounded-full" style={{ width: `${(item.salah / item.totalSoal) * 100}%`, background: '#EF4444' }} />
                       </div>

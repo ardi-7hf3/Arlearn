@@ -3,6 +3,7 @@ import { getSoal } from '../utils/soalStorage';
 import { addRiwayat } from '../utils/riwayatStorage';
 import ModalHasilTryout from './ModalHasilTryout';
 import CustomAlert from './CustomAlert';
+import LatexRenderer from './LatexRenderer';
 
 function getStreakKey() {
   return 'arlearn_streak_' + new Date().toDateString();
@@ -19,20 +20,19 @@ function getRataRata() {
 }
 
 export default function DashboardTryout({ onGoRiwayat }) {
-  const [soalList, setSoalList] = useState([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [jawabanUser, setJawabanUser] = useState({});
-  const [showHasil, setShowHasil] = useState(false);
-  const [hasilData, setHasilData] = useState(null);
-  const [tryoutCount, setTryoutCount] = useState(getTryoutCount);
-  const [rataRata, setRataRata] = useState(getRataRata);
-  const [streakDay, setStreakDay] = useState(1);
+  const [soalList, setSoalList]         = useState([]);
+  const [currentIdx, setCurrentIdx]     = useState(0);
+  const [jawabanUser, setJawabanUser]   = useState({});
+  const [showHasil, setShowHasil]       = useState(false);
+  const [hasilData, setHasilData]       = useState(null);
+  const [tryoutCount, setTryoutCount]   = useState(getTryoutCount);
+  const [rataRata, setRataRata]         = useState(getRataRata);
+  const [streakDay, setStreakDay]       = useState(1);
   const [alertSelesai, setAlertSelesai] = useState(false);
-  const [animKey, setAnimKey] = useState(0);
+  const [animKey, setAnimKey]           = useState(0);
 
   useEffect(() => {
     setSoalList(getSoal());
-    // Streak count
     const key = getStreakKey();
     const val = localStorage.getItem(key);
     if (!val) {
@@ -43,48 +43,32 @@ export default function DashboardTryout({ onGoRiwayat }) {
     }
   }, []);
 
-  const total = soalList.length;
-  const terjawab = Object.keys(jawabanUser).length;
-  const progress = total > 0 ? (terjawab / total) * 100 : 0;
-  const soal = soalList[currentIdx];
+  const total         = soalList.length;
+  const terjawab      = Object.keys(jawabanUser).length;
+  const progress      = total > 0 ? (terjawab / total) * 100 : 0;
+  const soal          = soalList[currentIdx];
   const semuaTerjawab = terjawab === total && total > 0;
 
-  const handlePilih = (idx) => {
-    setJawabanUser(prev => ({ ...prev, [currentIdx]: idx }));
-  };
+  const handlePilih = (idx) => setJawabanUser(prev => ({ ...prev, [currentIdx]: idx }));
 
-  const handleNext = () => {
-    if (currentIdx < total - 1) {
-      setCurrentIdx(c => c + 1);
-      setAnimKey(k => k + 1);
-    }
-  };
-  const handlePrev = () => {
-    if (currentIdx > 0) {
-      setCurrentIdx(c => c - 1);
-      setAnimKey(k => k + 1);
-    }
-  };
+  const goTo = (idx) => { setCurrentIdx(idx); setAnimKey(k => k + 1); };
+  const handleNext = () => { if (currentIdx < total - 1) goTo(currentIdx + 1); };
+  const handlePrev = () => { if (currentIdx > 0) goTo(currentIdx - 1); };
 
-  const handleSelesai = () => {
-    if (!semuaTerjawab) return;
-    setAlertSelesai(true);
-  };
+  const handleSelesai = () => { if (semuaTerjawab) setAlertSelesai(true); };
 
   const konfirmasiSelesai = () => {
     setAlertSelesai(false);
     const benar = soalList.filter((s, i) => jawabanUser[i] === s.jawabanBenar).length;
     const salah = total - benar;
-    const skor = Math.round((benar / total) * 100);
+    const skor  = Math.round((benar / total) * 100);
 
     addRiwayat({ skor, benar, salah, totalSoal: total, soal: soalList, jawabanUser });
 
     const newCount = tryoutCount + 1;
     localStorage.setItem('arlearn_tryout_count', newCount);
     setTryoutCount(newCount);
-
-    const key = getStreakKey();
-    localStorage.setItem(key, streakDay);
+    localStorage.setItem(getStreakKey(), streakDay);
 
     setHasilData({ soal: soalList, jawabanUser });
     setShowHasil(true);
@@ -94,38 +78,35 @@ export default function DashboardTryout({ onGoRiwayat }) {
   const handleTryoutLagi = () => {
     setShowHasil(false);
     setJawabanUser({});
-    setCurrentIdx(0);
-    setAnimKey(k => k + 1);
+    goTo(0);
     setSoalList(getSoal());
-  };
-
-  const handleLihatRiwayat = () => {
-    setShowHasil(false);
-    onGoRiwayat();
   };
 
   const labelOpts = ['A', 'B', 'C', 'D'];
 
   if (!soal) return (
     <div className="flex items-center justify-center h-64" style={{ color: '#64748B' }}>
-      <div className="spin-anim w-8 h-8 border-2 border-current border-t-transparent rounded-full" />
+      <i className="fa-solid fa-spinner fa-spin text-2xl" />
     </div>
   );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fadeIn">
-      {/* Hero */}
+
+      {/* ── Hero ── */}
       <div className="mb-8">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div>
             <h1 className="font-display font-black text-2xl sm:text-3xl" style={{ color: '#F0F6FF' }}>
-              Halo, Ardi! <span className="inline-block" style={{ animation: 'wave 1s ease-in-out' }}>👋</span>
+              Halo, Ardi!{' '}
+              <i className="fa-solid fa-hand-wave"
+                style={{ color: '#F59E0B', display: 'inline-block', animation: 'wave 1s ease-in-out' }} />
             </h1>
             <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Siap untuk tryout hari ini?</p>
           </div>
           <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
-            <span>🔥</span>
+            <i className="fa-solid fa-fire" style={{ color: '#F59E0B' }} />
             <span className="text-sm font-semibold" style={{ color: '#F59E0B' }}>Hari ke-{streakDay}</span>
           </div>
         </div>
@@ -133,13 +114,12 @@ export default function DashboardTryout({ onGoRiwayat }) {
         {/* Stats cards */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: '📚', label: 'Total Soal', value: total, color: '#00E5FF' },
-            { icon: '⭐', label: 'Rata-rata', value: rataRata + '%', color: '#F59E0B' },
-            { icon: '🏆', label: 'Tryout', value: tryoutCount + 'x', color: '#10B981' },
+            { icon: 'fa-solid fa-book-open', label: 'Total Soal', value: total,          color: '#00E5FF' },
+            { icon: 'fa-solid fa-star',       label: 'Rata-rata',  value: rataRata + '%', color: '#F59E0B' },
+            { icon: 'fa-solid fa-trophy',     label: 'Tryout',     value: tryoutCount + 'x', color: '#10B981' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-xl p-4 card-hover"
-              style={{ background: '#111827' }}>
-              <div className="text-xl mb-2">{stat.icon}</div>
+            <div key={stat.label} className="rounded-xl p-4 card-hover" style={{ background: '#111827' }}>
+              <i className={`${stat.icon} text-xl mb-2 block`} style={{ color: stat.color }} />
               <div className="font-display font-black text-xl" style={{ color: stat.color }}>{stat.value}</div>
               <div className="text-xs mt-0.5" style={{ color: '#475569' }}>{stat.label}</div>
             </div>
@@ -147,7 +127,7 @@ export default function DashboardTryout({ onGoRiwayat }) {
         </div>
       </div>
 
-      {/* Progress */}
+      {/* ── Progress ── */}
       <div className="mb-6 p-4 rounded-2xl" style={{ background: '#111827', border: '1px solid #1E293B' }}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold" style={{ color: '#94A3B8' }}>Progress Soal</span>
@@ -156,48 +136,59 @@ export default function DashboardTryout({ onGoRiwayat }) {
         <div className="h-2 rounded-full overflow-hidden" style={{ background: '#1E293B' }}>
           <div className="h-full rounded-full progress-bar-inner" style={{ width: `${progress}%` }} />
         </div>
-        {/* Navigator dots */}
+        {/* Nomor soal */}
         <div className="flex gap-1.5 mt-3 flex-wrap">
           {soalList.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setCurrentIdx(i); setAnimKey(k => k + 1); }}
+              onClick={() => goTo(i)}
               className="w-7 h-7 rounded-lg text-xs font-bold transition-all"
               style={{
-                background: i === currentIdx ? 'linear-gradient(135deg, #00E5FF, #06B6D4)' : jawabanUser[i] !== undefined ? 'rgba(16,185,129,0.2)' : '#1E293B',
-                color: i === currentIdx ? '#050B18' : jawabanUser[i] !== undefined ? '#10B981' : '#475569',
-                border: i === currentIdx ? 'none' : jawabanUser[i] !== undefined ? '1px solid rgba(16,185,129,0.3)' : '1px solid #2D3748',
+                background: i === currentIdx
+                  ? 'linear-gradient(135deg, #00E5FF, #06B6D4)'
+                  : jawabanUser[i] !== undefined ? 'rgba(16,185,129,0.2)' : '#1E293B',
+                color: i === currentIdx ? '#050B18'
+                  : jawabanUser[i] !== undefined ? '#10B981' : '#475569',
+                border: i === currentIdx ? 'none'
+                  : jawabanUser[i] !== undefined ? '1px solid rgba(16,185,129,0.3)' : '1px solid #2D3748',
               }}
-            >
-              {i + 1}
-            </button>
+            >{i + 1}</button>
           ))}
         </div>
       </div>
 
-      {/* Question Card */}
+      {/* ── Question Card ── */}
       <div key={animKey} className="rounded-2xl p-6 mb-4 animate-fadeSlide"
         style={{ background: '#111827', border: '1px solid #1E293B', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-        {/* Header */}
+
+        {/* Header soal */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-sm"
-              style={{ background: 'linear-gradient(135deg, #00E5FF20, #06B6D420)', color: '#00E5FF', border: '1px solid rgba(0,229,255,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg,#00E5FF20,#06B6D420)', color: '#00E5FF', border: '1px solid rgba(0,229,255,0.2)' }}>
               {currentIdx + 1}
             </div>
             <span className="text-xs font-medium" style={{ color: '#475569' }}>dari {total} soal</span>
           </div>
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${jawabanUser[currentIdx] !== undefined ? 'badge-answered' : 'badge-unanswered'}`}>
-            {jawabanUser[currentIdx] !== undefined ? '✓ Sudah Dijawab' : '○ Belum Dijawab'}
-          </span>
+          {jawabanUser[currentIdx] !== undefined ? (
+            <span className="badge-answered text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+              <i className="fa-solid fa-circle-check text-xs" />
+              Sudah Dijawab
+            </span>
+          ) : (
+            <span className="badge-unanswered text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+              <i className="fa-regular fa-circle text-xs" />
+              Belum Dijawab
+            </span>
+          )}
         </div>
 
-        {/* Question text */}
-        <p className="font-display font-semibold text-base sm:text-lg leading-relaxed mb-5" style={{ color: '#F0F6FF' }}>
-          {soal.teks}
-        </p>
+        {/* Teks soal */}
+        <div className="font-display font-semibold text-base sm:text-lg leading-relaxed mb-5" style={{ color: '#F0F6FF' }}>
+          <LatexRenderer text={soal.teks} />
+        </div>
 
-        {/* Options */}
+        {/* Pilihan jawaban */}
         <div className="space-y-2.5">
           {soal.pilihan.map((opt, j) => (
             <div
@@ -216,15 +207,19 @@ export default function DashboardTryout({ onGoRiwayat }) {
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#00E5FF' }} />
                 )}
               </div>
-              <span className="font-bold text-sm flex-shrink-0" style={{ color: '#00E5FF', minWidth: '20px' }}>{labelOpts[j]}</span>
-              <span className="text-sm" style={{ color: jawabanUser[currentIdx] === j ? '#F0F6FF' : '#94A3B8' }}>{opt}</span>
+              <span className="font-bold text-sm flex-shrink-0" style={{ color: '#00E5FF', minWidth: '20px' }}>
+                {labelOpts[j]}
+              </span>
+              <span className="text-sm" style={{ color: jawabanUser[currentIdx] === j ? '#F0F6FF' : '#94A3B8' }}>
+                <LatexRenderer text={opt} />
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-4">
+      {/* ── Navigasi Prev/Next ── */}
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={handlePrev}
           disabled={currentIdx === 0}
@@ -233,7 +228,7 @@ export default function DashboardTryout({ onGoRiwayat }) {
           onMouseEnter={e => { if (currentIdx > 0) { e.currentTarget.style.borderColor = 'rgba(0,229,255,0.3)'; e.currentTarget.style.color = '#00E5FF'; }}}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E293B'; e.currentTarget.style.color = '#94A3B8'; }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+          <i className="fa-solid fa-chevron-left text-xs" />
           Sebelumnya
         </button>
 
@@ -248,22 +243,43 @@ export default function DashboardTryout({ onGoRiwayat }) {
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E293B'; e.currentTarget.style.color = '#94A3B8'; }}
         >
           Selanjutnya
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+          <i className="fa-solid fa-chevron-right text-xs" />
         </button>
       </div>
 
-      {/* FAB Selesai */}
-      <button
-        onClick={handleSelesai}
-        disabled={!semuaTerjawab}
-        className={`fab-btn px-6 py-3.5 rounded-2xl font-display font-bold text-sm flex items-center gap-2 btn-gradient disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none`}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20,6 9,17 4,12"/></svg>
-        Selesai Tryout
-        {!semuaTerjawab && <span className="text-xs font-normal opacity-75">({total - terjawab} belum)</span>}
-      </button>
+      {/* ── Tombol Selesai Tryout (inline, bukan fixed) ── */}
+      {/* Selalu ada di DOM tapi hanya aktif saat semua terjawab */}
+      <div className="mt-2 mb-8">
+        {semuaTerjawab ? (
+          /* Aktif + animasi glow saat semua terjawab */
+          <button
+            onClick={handleSelesai}
+            className="w-full py-4 rounded-2xl font-display font-bold text-base btn-gradient flex items-center justify-center gap-2"
+            style={{ boxShadow: '0 0 24px rgba(0,229,255,0.35), 0 4px 20px rgba(0,0,0,0.4)' }}
+          >
+            <i className="fa-solid fa-circle-check text-lg" />
+            Selesai Tryout
+          </button>
+        ) : (
+          /* Disabled — tampil tapi abu-abu, teks info sisa soal */
+          <div
+            className="w-full py-4 rounded-2xl font-display font-bold text-sm flex items-center justify-center gap-2 select-none"
+            style={{
+              background: '#111827',
+              color: '#334155',
+              border: '1px solid #1E293B',
+              cursor: 'not-allowed',
+            }}
+          >
+            <i className="fa-regular fa-circle-check text-base" style={{ color: '#334155' }} />
+            Selesai Tryout
+            <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: '#1E293B', color: '#475569' }}>
+              {total - terjawab} soal belum dijawab
+            </span>
+          </div>
+        )}
+      </div>
 
-      {/* Confirm selesai */}
       <CustomAlert
         show={alertSelesai}
         tipe="confirm"
@@ -275,13 +291,12 @@ export default function DashboardTryout({ onGoRiwayat }) {
         onNo={() => setAlertSelesai(false)}
       />
 
-      {/* Modal Hasil */}
       <ModalHasilTryout
         show={showHasil}
         soal={hasilData?.soal}
         jawabanUser={hasilData?.jawabanUser}
         onTryoutLagi={handleTryoutLagi}
-        onLihatRiwayat={handleLihatRiwayat}
+        onLihatRiwayat={() => { setShowHasil(false); onGoRiwayat(); }}
       />
     </div>
   );
