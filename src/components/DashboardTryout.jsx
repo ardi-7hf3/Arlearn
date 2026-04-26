@@ -247,36 +247,26 @@ export default function DashboardTryout({ onGoRiwayat }) {
         </button>
       </div>
 
-      {/* ── Tombol Selesai Tryout (inline, bukan fixed) ── */}
-      {/* Selalu ada di DOM tapi hanya aktif saat semua terjawab */}
+      {/* ── Tombol Selesai Tryout ── */}
       <div className="mt-2 mb-8">
         {semuaTerjawab ? (
-          /* Aktif + animasi glow saat semua terjawab */
+          /* Muncul HANYA saat semua soal terjawab */
           <button
             onClick={handleSelesai}
-            className="w-full py-4 rounded-2xl font-display font-bold text-base btn-gradient flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl font-display font-bold text-base btn-gradient flex items-center justify-center gap-2 animate-fadeIn"
             style={{ boxShadow: '0 0 24px rgba(0,229,255,0.35), 0 4px 20px rgba(0,0,0,0.4)' }}
           >
             <i className="fa-solid fa-circle-check text-lg" />
             Selesai Tryout
           </button>
         ) : (
-          /* Disabled — tampil tapi abu-abu, teks info sisa soal */
-          <div
-            className="w-full py-4 rounded-2xl font-display font-bold text-sm flex items-center justify-center gap-2 select-none"
-            style={{
-              background: '#111827',
-              color: '#334155',
-              border: '1px solid #1E293B',
-              cursor: 'not-allowed',
-            }}
-          >
-            <i className="fa-regular fa-circle-check text-base" style={{ color: '#334155' }} />
-            Selesai Tryout
-            <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: '#1E293B', color: '#475569' }}>
-              {total - terjawab} soal belum dijawab
-            </span>
-          </div>
+          /* Info sisa soal — tanpa tombol, tanpa background */
+          <p className="text-center text-xs py-2" style={{ color: '#334155' }}>
+            <i className="fa-solid fa-circle-info mr-1.5" style={{ color: '#1E293B' }} />
+            Jawab semua soal untuk mengaktifkan tombol selesai
+            &nbsp;·&nbsp;
+            <span style={{ color: '#475569' }}>{terjawab}/{total} terjawab</span>
+          </p>
         )}
       </div>
 
