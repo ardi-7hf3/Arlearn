@@ -10,7 +10,7 @@ export async function parseDocxFile(file) {
         const text = result.value;
         const soal = parseTextToSoal(text);
         if (soal.length === 0) {
-          reject(new Error('Tidak ada soal valid ditemukan dalam file DOCX. Pastikan format tabel sesuai.'));
+          reject(new Error('Tidak ada soal valid ditemukan dalam file DOCX. Pastikan format tabel sesuai (lihat Format Upload).'));
         } else {
           resolve(soal);
         }
@@ -26,40 +26,40 @@ export async function parseDocxFile(file) {
 function parseTextToSoal(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const soal = [];
-  
-  // Try to find table rows: No | Soal | A | B | C | D | Jawaban | Penjelasan
+
+  // Format tabel: No | Soal | A | B | C | D | Jawaban | Penjelasan | Pembahasan
   let i = 0;
-  // Skip header row if exists
   while (i < lines.length) {
     const parts = lines[i].split('\t');
     if (parts.length >= 7) {
       const noOrSoal = parts[0].trim();
-      // Check if this looks like a data row (starts with number)
       if (/^\d+/.test(noOrSoal)) {
-        const teks = parts[1]?.trim() || parts[0]?.trim();
-        const pilA = parts[2]?.trim() || '';
-        const pilB = parts[3]?.trim() || '';
-        const pilC = parts[4]?.trim() || '';
-        const pilD = parts[5]?.trim() || '';
+        const teks       = parts[1]?.trim() || '';
+        const pilA       = parts[2]?.trim() || '';
+        const pilB       = parts[3]?.trim() || '';
+        const pilC       = parts[4]?.trim() || '';
+        const pilD       = parts[5]?.trim() || '';
         const jawabanStr = parts[6]?.trim().toUpperCase() || 'A';
-        const penjelasan = parts[7]?.trim() || 'Tidak ada penjelasan.';
-        
+        const penjelasan = parts[7]?.trim() || '';
+        const pembahasan = parts[8]?.trim() || '';
+
         const jawabanMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
         const jawabanBenar = jawabanMap[jawabanStr] ?? 0;
-        
+
         if (teks && pilA && pilB) {
           soal.push({
             teks,
             pilihan: [pilA, pilB, pilC, pilD].filter(Boolean),
             jawabanBenar,
-            penjelasan
+            penjelasan: penjelasan || 'Tidak ada penjelasan.',
+            pembahasan: pembahasan || penjelasan || 'Tidak ada pembahasan.'
           });
         }
       }
     }
     i++;
   }
-  
+
   return soal;
 }
 
@@ -69,28 +69,30 @@ export async function parseJsFile(file) {
     reader.onload = (e) => {
       try {
         const text = e.target.result;
-        // Extract array from JS file
+
+        // Cari array [...] pertama yang ditemukan
         const match = text.match(/\[[\s\S]*\]/);
         if (!match) {
           reject(new Error('Format file JS tidak valid. Tidak ditemukan array soal.'));
           return;
         }
-        // Safe eval using Function constructor
+
         const arrStr = match[0];
-        // Parse manually - replace JS object notation
+        // Bersihkan komentar dan trailing comma agar bisa di-JSON.parse
         const cleaned = arrStr
-          .replace(/\/\/.*$/gm, '') // remove comments
-          .replace(/,\s*([}\]])/g, '$1'); // trailing commas
-        
+          .replace(/\/\/[^\n]*/g, '')           // single-line comments
+          .replace(/\/\*[\s\S]*?\*\//g, '')      // multi-line comments
+          .replace(/,(\s*[}\]])/g, '$1');        // trailing commas
+
         const parsed = JSON.parse(cleaned);
         if (!Array.isArray(parsed)) {
-          reject(new Error('File JS harus mengekspor array soal.'));
+          reject(new Error('File JS harus berisi array soal.'));
           return;
         }
-        
+
         const valid = validateSoalArray(parsed);
         if (valid.errors.length > 0) {
-          reject(new Error('Soal tidak valid: ' + valid.errors.join(', ')));
+          reject(new Error('Soal tidak valid:\n' + valid.errors.join('\n')));
           return;
         }
         resolve(valid.soal);
@@ -106,27 +108,29 @@ export async function parseJsFile(file) {
 function validateSoalArray(arr) {
   const errors = [];
   const soal = [];
-  
+
   arr.forEach((item, idx) => {
+    const no = idx + 1;
     if (!item.teks || typeof item.teks !== 'string') {
-      errors.push(`Soal #${idx+1}: field 'teks' tidak valid`);
+      errors.push(`Soal #${no}: field 'teks' wajib diisi (string).`);
       return;
     }
     if (!Array.isArray(item.pilihan) || item.pilihan.length < 2) {
-      errors.push(`Soal #${idx+1}: field 'pilihan' harus array minimal 2 item`);
+      errors.push(`Soal #${no}: 'pilihan' harus array minimal 2 item.`);
       return;
     }
     if (typeof item.jawabanBenar !== 'number' || item.jawabanBenar < 0 || item.jawabanBenar >= item.pilihan.length) {
-      errors.push(`Soal #${idx+1}: 'jawabanBenar' harus index valid`);
+      errors.push(`Soal #${no}: 'jawabanBenar' harus index valid (0–${item.pilihan.length - 1}).`);
       return;
     }
     soal.push({
-      teks: item.teks,
-      pilihan: item.pilihan,
+      teks:        item.teks,
+      pilihan:     item.pilihan.map(String),
       jawabanBenar: item.jawabanBenar,
-      penjelasan: item.penjelasan || 'Tidak ada penjelasan.'
+      penjelasan:  item.penjelasan  || 'Tidak ada penjelasan.',
+      pembahasan:  item.pembahasan  || item.penjelasan || 'Tidak ada pembahasan.'
     });
   });
-  
+
   return { soal, errors };
 }
