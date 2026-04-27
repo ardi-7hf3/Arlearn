@@ -97,10 +97,18 @@ export default function DashboardTryout({ onGoRiwayat }) {
       <div className="mb-8">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div>
-            <h1 className="font-display font-black text-2xl sm:text-3xl" style={{ color: '#F0F6FF' }}>
+            <h1 style={{
+              fontFamily: '"Poppins", serif',
+              fontWeight: 800,
+              fontStyle: 'italic',
+              fontSize: 'clamp(1.6rem, 5vw, 2.2rem)',
+              color: '#F0F6FF',
+              lineHeight: 1.2,
+              letterSpacing: '-0.01em',
+            }}>
               Halo, Ardi!{' '}
               <i className="fa-solid fa-hand-wave"
-                style={{ color: '#F59E0B', display: 'inline-block', animation: 'wave 1s ease-in-out' }} />
+                style={{ color: '#F59E0B', display: 'inline-block', animation: 'wave 1s ease-in-out', fontStyle: 'normal' }} />
             </h1>
             <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Siap untuk tryout hari ini?</p>
           </div>
