@@ -1,75 +1,70 @@
 import React from 'react';
 
-export default function Navbar({ activePage, setPage, onLogout }) {
-  const navItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    },
-    {
-      id: 'riwayat',
-      label: 'Riwayat',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-    },
-    {
-      id: 'kelola',
-      label: 'Kelola Soal',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    },
-  ];
+const NAV_ITEMS = [
+  { key: 'dashboard', icon: 'fa-solid fa-house',       label: 'Tryout'  },
+  { key: 'riwayat',   icon: 'fa-solid fa-clock-rotate-left', label: 'Riwayat' },
+  { key: 'kelola',    icon: 'fa-solid fa-sliders',     label: 'Kelola'  },
+];
+
+export default function Navbar({ activePage, setPage, onLogout, userName }) {
+
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 glass"
-      style={{ borderBottom: '1px solid rgba(0,229,255,0.1)' }}
-    >
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('dashboard')}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #00E5FF, #0891B2)' }}>
-            <span className="font-display font-black text-sm" style={{ color: '#050B18' }}>AR</span>
-          </div>
-          <span className="font-display font-bold text-lg logo-gradient">ARLearn</span>
-          <span className="text-xs px-2 py-0.5 rounded-full font-medium hidden sm:block" style={{ background: 'rgba(0,229,255,0.1)', color: '#00E5FF', border: '1px solid rgba(0,229,255,0.2)' }}>BETA</span>
+    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-16"
+      style={{ background: 'rgba(5,11,24,0.9)', backdropFilter:'blur(16px)', borderBottom:'1px solid rgba(0,229,255,0.08)' }}>
+
+      {/* Logo */}
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)' }}>
+          <span className="font-black text-xs" style={{ color:'#050B18' }}>AR</span>
         </div>
+        <span className="font-black text-base logo-gradient">ARLearn</span>
+      </div>
 
-        {/* Nav Items */}
-        <div className="flex items-center gap-1">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setPage(item.id)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-              style={{
-                color: activePage === item.id ? '#00E5FF' : '#64748B',
-                background: activePage === item.id ? 'rgba(0,229,255,0.1)' : 'transparent',
-                border: activePage === item.id ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent',
-              }}
-              onMouseEnter={e => { if (activePage !== item.id) e.currentTarget.style.color = '#94A3B8'; }}
-              onMouseLeave={e => { if (activePage !== item.id) e.currentTarget.style.color = '#64748B'; }}
-            >
-              {item.icon}
-              <span className="hidden sm:block">{item.label}</span>
-            </button>
-          ))}
-
-          {/* Logout */}
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ml-1"
-            style={{ color: '#64748B', border: '1px solid transparent' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#64748B'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-              <polyline points="16,17 21,12 16,7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            <span className="hidden sm:block">Keluar</span>
+      {/* Desktop nav */}
+      <div className="hidden sm:flex items-center gap-1">
+        {NAV_ITEMS.map(item => (
+          <button key={item.key} onClick={() => setPage(item.key)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              background: activePage === item.key ? 'rgba(249,115,22,0.15)' : 'transparent',
+              color: activePage === item.key ? '#F97316' : '#64748B',
+              border: activePage === item.key ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent',
+            }}>
+            <i className={item.icon} />
+            {item.label}
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Right: user + logout */}
+      <div className="flex items-center gap-2">
+        <span className="hidden sm:block text-sm font-semibold" style={{ color:'#94A3B8' }}>
+          <i className="fa-solid fa-user-circle mr-1" style={{ color:'#00E5FF' }} />
+          {userName}
+        </span>
+        <button onClick={onLogout}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+          style={{ background:'rgba(239,68,68,0.1)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.2)' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.2)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'}>
+          <i className="fa-solid fa-right-from-bracket mr-1" />
+          <span className="hidden sm:inline">Keluar</span>
+        </button>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden z-50 flex"
+        style={{ background:'rgba(5,11,24,0.95)', borderTop:'1px solid rgba(0,229,255,0.08)', backdropFilter:'blur(16px)' }}>
+        {NAV_ITEMS.map(item => (
+          <button key={item.key} onClick={() => setPage(item.key)}
+            className="flex-1 flex flex-col items-center gap-0.5 py-2 transition-all"
+            style={{ color: activePage === item.key ? '#F97316' : '#475569' }}>
+            <i className={`${item.icon} text-base`} />
+            <span className="text-xs font-semibold">{item.label}</span>
+          </button>
+        ))}
       </div>
     </nav>
   );

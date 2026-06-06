@@ -10,9 +10,11 @@ function DetailModal({ show, data, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4"
-      style={{ background: 'rgba(5,11,24,0.9)', backdropFilter: 'blur(10px)' }}>
+      style={{ background: 'rgba(5,11,24,0.9)', backdropFilter: 'blur(10px)' }}
+      onClick={onClose}>
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl animate-scaleIn"
-        style={{ background: '#111827', border: '1px solid rgba(0,229,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
+        style={{ background: '#111827', border: '1px solid rgba(0,229,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}
+        onClick={e => e.stopPropagation()}>
 
         <div className="flex items-center justify-between p-5 border-b sticky top-0" style={{ borderColor: '#1E293B', background: '#111827', zIndex: 2 }}>
           <div>

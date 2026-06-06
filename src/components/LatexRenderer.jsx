@@ -1,91 +1,51 @@
 import React from 'react';
-import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import { InlineMath, BlockMath } from 'react-katex';
 
-/**
- * LatexRenderer — render teks campuran LaTeX + plain text.
- *
- * Mendukung:
- *  - Inline math  : $...$  atau \(...\)
- *  - Block math   : $$...$$ atau \[...\]
- *  - Teks biasa   : sisanya
- *
- * Contoh input:
- *  "Nilai dari $\int_0^1 x^2\,dx$ adalah $\frac{1}{3}$"
- *  "Tentukan nilai $$x^2 + 5x + 6 = 0$$"
- */
-export default function LatexRenderer({ text, className = '', style = {} }) {
+export default function LatexRenderer({ text }) {
   if (!text) return null;
 
-  // Deteksi apakah ada LaTeX
-  const hasLatex = /\$|\\\(|\\\[/.test(text);
-  if (!hasLatex) {
-    return <span className={className} style={style}>{text}</span>;
-  }
+  // Split by $$ (block) then $ (inline)
+  const parts = [];
+  let remaining = text;
+  let key = 0;
 
-  // Tokenize: pisahkan block ($$...$$  atau \[...\]) dan inline ($...$  atau \(...\))
-  const tokens = tokenize(text);
-
-  return (
-    <span className={className} style={style}>
-      {tokens.map((token, i) => {
-        if (token.type === 'block') {
-          return (
-            <span key={i} className="block my-3">
-              <BlockMath math={token.content} errorColor="#EF4444" />
-            </span>
-          );
-        }
-        if (token.type === 'inline') {
-          return (
-            <InlineMath key={i} math={token.content} errorColor="#EF4444" />
-          );
-        }
-        // plain text — jaga newline
-        return token.content.split('\n').map((line, j, arr) => (
-          <React.Fragment key={`${i}-${j}`}>
-            {line}
-            {j < arr.length - 1 && <br />}
-          </React.Fragment>
-        ));
-      })}
-    </span>
-  );
-}
-
-function tokenize(text) {
-  const tokens = [];
-  // Urutan penting: block dulu, baru inline
-  // Pattern: $$...$$ | \[...\] | $...$ | \(...\)
-  const pattern = /(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^$\n]+?\$|\\\([^)]+?\\\))/g;
-
-  let lastIndex = 0;
-  let match;
-
-  while ((match = pattern.exec(text)) !== null) {
-    // Teks sebelum match
-    if (match.index > lastIndex) {
-      tokens.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+  while (remaining.length > 0) {
+    const blockStart = remaining.indexOf('$$');
+    if (blockStart !== -1) {
+      if (blockStart > 0) {
+        parts.push(<span key={key++}>{remaining.slice(0, blockStart)}</span>);
+      }
+      const blockEnd = remaining.indexOf('$$', blockStart + 2);
+      if (blockEnd !== -1) {
+        const latex = remaining.slice(blockStart + 2, blockEnd);
+        parts.push(
+          <BlockMath key={key++} math={latex} renderError={() => <code>{latex}</code>} />
+        );
+        remaining = remaining.slice(blockEnd + 2);
+        continue;
+      }
     }
 
-    const raw = match[0];
-    if (raw.startsWith('$$') && raw.endsWith('$$')) {
-      tokens.push({ type: 'block', content: raw.slice(2, -2).trim() });
-    } else if (raw.startsWith('\\[') && raw.endsWith('\\]')) {
-      tokens.push({ type: 'block', content: raw.slice(2, -2).trim() });
-    } else if (raw.startsWith('$') && raw.endsWith('$')) {
-      tokens.push({ type: 'inline', content: raw.slice(1, -1).trim() });
-    } else if (raw.startsWith('\\(') && raw.endsWith('\\)')) {
-      tokens.push({ type: 'inline', content: raw.slice(2, -2).trim() });
+    const inlineStart = remaining.indexOf('$');
+    if (inlineStart !== -1) {
+      if (inlineStart > 0) {
+        parts.push(<span key={key++}>{remaining.slice(0, inlineStart)}</span>);
+      }
+      const inlineEnd = remaining.indexOf('$', inlineStart + 1);
+      if (inlineEnd !== -1) {
+        const latex = remaining.slice(inlineStart + 1, inlineEnd);
+        parts.push(
+          <InlineMath key={key++} math={latex} renderError={() => <code>{latex}</code>} />
+        );
+        remaining = remaining.slice(inlineEnd + 1);
+        continue;
+      }
     }
 
-    lastIndex = match.index + raw.length;
+    parts.push(<span key={key++}>{remaining}</span>);
+    break;
   }
 
-  // Sisa teks setelah match terakhir
-  if (lastIndex < text.length) {
-    tokens.push({ type: 'text', content: text.slice(lastIndex) });
-  }
-
-  return tokens;
+  return <span className="latex-text">{parts}</span>;
 }

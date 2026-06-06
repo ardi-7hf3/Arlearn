@@ -62,9 +62,11 @@ export default function UploadSoalModal({ show, onClose, onSuccess }) {
   return (
     <>
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4"
-        style={{ background: 'rgba(5,11,24,0.88)', backdropFilter: 'blur(10px)' }}>
+        style={{ background: 'rgba(5,11,24,0.88)', backdropFilter: 'blur(10px)' }}
+        onClick={onClose}>
         <div className="w-full max-w-md rounded-2xl animate-scaleIn"
-          style={{ background: '#111827', border: '1px solid rgba(0,229,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
+          style={{ background: '#111827', border: '1px solid rgba(0,229,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}
+          onClick={e => e.stopPropagation()}>
 
           <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#1E293B' }}>
             <h2 className="font-display font-bold text-lg" style={{ color: '#F0F6FF' }}>

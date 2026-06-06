@@ -1,255 +1,256 @@
 import React, { useState } from 'react';
-import { getSoal, deleteSoal, resetToDefault, isDefaultSoal } from '../utils/soalStorage';
-import { saveAs } from 'file-saver';
+import { getSoal, setSoal, resetSoal, getDefaultSoal } from '../utils/soalStorage';
 import CustomAlert from './CustomAlert';
-import UploadSoalModal from './UploadSoalModal';
-import FormatUploadModal from './FormatUploadModal';
 
-const CONTOH_JS = `export const tambahanSoal = [
-  // ── Soal biasa (plain text) ──────────────────────────────────────
-  {
-    id: 11,
-    teks: "Apa kepanjangan dari CPU?",
-    pilihan: [
-      "Central Processing Unit",
-      "Core Processing Unit",
-      "Central Program Utility",
-      "Computer Processing Unit"
-    ],
-    jawabanBenar: 0,
-    penjelasan: "CPU adalah Central Processing Unit, otak dari komputer.",
-    pembahasan: "CPU (Central Processing Unit) adalah komponen utama komputer yang menjalankan instruksi program. CPU terdiri dari ALU untuk operasi matematika, CU untuk mengatur aliran data, dan Register untuk penyimpanan sementara."
-  },
+const MAPEL_OPTS = [
+  { value:'kimia',     label:'Kimia',        color:'#F59E0B' },
+  { value:'fisika',    label:'Fisika',        color:'#00E5FF' },
+  { value:'mtkLanjut', label:'MTK Lanjut',   color:'#A78BFA' },
+  { value:'mtkWajib',  label:'MTK Wajib',    color:'#10B981' },
+];
 
-  // ── Soal matematika dengan LaTeX ─────────────────────────────────
-  // PENTING: dalam string JS, backslash ditulis DOUBLE (\\\\frac bukan \\frac)
-  {
-    id: 12,
-    teks: "Nilai dari $\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x}$ adalah ...",
-    pilihan: ["$0$", "$1$", "$\\\\infty$", "Tidak terdefinisi"],
-    jawabanBenar: 1,
-    penjelasan: "Limit fundamental: $\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x} = 1$",
-    pembahasan: "Ini adalah limit fundamental trigonometri.\\n\\nBukti dengan L\\'Hôpital:\\n$$\\\\lim_{x \\\\to 0} \\\\frac{\\\\sin x}{x} = \\\\lim_{x \\\\to 0} \\\\frac{\\\\cos x}{1} = 1$$\\n\\nNilai ini sangat penting dalam kalkulus dan sering digunakan sebagai dasar pembuktian lainnya."
-  },
-
-  // ── Soal dengan rumus blok (display math $$...$$) ────────────────
-  {
-    id: 13,
-    teks: "Diketahui $f(x) = x^3 - 6x^2 + 9x + 1$. Titik kritis fungsi tersebut berada di ...",
-    pilihan: ["$x = 1$ dan $x = 3$", "$x = 2$ dan $x = 4$", "$x = 0$ dan $x = 3$", "$x = 1$ dan $x = 4$"],
-    jawabanBenar: 0,
-    penjelasan: "Titik kritis saat $f'(x) = 0$: $3x^2 - 12x + 9 = 0 \\\\Rightarrow x = 1$ atau $x = 3$",
-    pembahasan: "Untuk mencari titik kritis, turunkan $f(x)$ dan samakan dengan nol.\\n\\n$$f'(x) = 3x^2 - 12x + 9$$\\n\\nSelesaikan $f'(x) = 0$:\\n$$3x^2 - 12x + 9 = 0$$\\n$$x^2 - 4x + 3 = 0$$\\n$$(x-1)(x-3) = 0$$\\n\\nJadi titik kritis: $x = 1$ dan $x = 3$."
-  }
-];`;
+const BLANK = { teks:'', pilihan:['','','',''], jawabanBenar:0, penjelasan:'', mapel:'kimia' };
 
 export default function KelolaSoalPage() {
-  const [soalList, setSoalList] = useState(getSoal);
-  const [showUpload, setShowUpload] = useState(false);
-  const [showFormat, setShowFormat] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [alert, setAlert] = useState({ show: false });
-  const [search, setSearch] = useState('');
+  const [soalList, setSoalList]   = useState(getSoal);
+  const [filter, setFilter]       = useState('all');
+  const [form, setForm]           = useState(BLANK);
+  const [editId, setEditId]       = useState(null);
+  const [showForm, setShowForm]   = useState(false);
+  const [alert, setAlert]         = useState({ show: false });
+  const [search, setSearch]       = useState('');
 
-  const filtered = soalList.filter(s => s.teks.toLowerCase().includes(search.toLowerCase()));
+  const filtered = soalList.filter(s => {
+    const matchMapel = filter === 'all' || s.mapel === filter;
+    const matchSearch = !search || s.teks.toLowerCase().includes(search.toLowerCase());
+    return matchMapel && matchSearch;
+  });
 
-  const handleDelete = (id) => {
-    if (isDefaultSoal(id)) {
-      setAlert({ show: true, tipe: 'error', judul: 'Tidak Dapat Dihapus', pesan: 'Soal default (ID 1-10) tidak bisa dihapus. Hanya soal custom yang bisa dihapus.' });
-      return;
+  const save = () => {
+    if (!form.teks.trim()) return setAlert({ show:true, tipe:'warning', judul:'Soal Kosong', pesan:'Teks soal tidak boleh kosong.' });
+    if (form.pilihan.some(p => !p.trim())) return setAlert({ show:true, tipe:'warning', judul:'Pilihan Kosong', pesan:'Semua pilihan harus diisi.' });
+    if (!form.penjelasan.trim()) return setAlert({ show:true, tipe:'warning', judul:'Penjelasan Kosong', pesan:'Penjelasan tidak boleh kosong.' });
+
+    let newList;
+    if (editId !== null) {
+      newList = soalList.map(s => s.id === editId ? { ...s, ...form } : s);
+    } else {
+      const newId = Date.now();
+      newList = [...soalList, { id: newId, ...form }];
     }
-    setDeleteTarget(id);
+    setSoal(newList);
+    setSoalList(newList);
+    setShowForm(false);
+    setForm(BLANK);
+    setEditId(null);
+    setAlert({ show:true, tipe:'success', judul:'Berhasil!', pesan: editId ? 'Soal berhasil diperbarui.' : 'Soal baru berhasil ditambahkan.' });
   };
 
-  const konfirmasiDelete = () => {
-    const updated = deleteSoal(deleteTarget);
-    setSoalList(updated);
-    setDeleteTarget(null);
-    setAlert({ show: true, tipe: 'success', judul: 'Soal Dihapus', pesan: 'Soal berhasil dihapus dari bank soal.' });
+  const hapus = (id) => {
+    setAlert({
+      show:true, tipe:'confirm', judul:'Hapus Soal?', pesan:'Soal ini akan dihapus permanen.',
+      yesLabel:'Ya, Hapus', noLabel:'Batal',
+      onYes: () => {
+        const newList = soalList.filter(s => s.id !== id);
+        setSoal(newList);
+        setSoalList(newList);
+        setAlert({ show:false });
+      },
+      onNo: () => setAlert({ show:false }),
+    });
   };
 
-  const handleReset = () => setShowResetConfirm(true);
-  const konfirmasiReset = () => {
-    const updated = resetToDefault();
-    setSoalList(updated);
-    setShowResetConfirm(false);
-    setAlert({ show: true, tipe: 'success', judul: 'Reset Berhasil', pesan: 'Bank soal telah dikembalikan ke 10 soal default.' });
+  const edit = (s) => {
+    setForm({ teks:s.teks, pilihan:[...s.pilihan], jawabanBenar:s.jawabanBenar, penjelasan:s.penjelasan||'', mapel:s.mapel||'kimia' });
+    setEditId(s.id);
+    setShowForm(true);
+    window.scrollTo({ top:0, behavior:'smooth' });
   };
 
-  const handleDownloadJs = () => {
-    const blob = new Blob([CONTOH_JS], { type: 'application/javascript' });
-    saveAs(blob, 'contoh-soal-arlearn.js');
+  const handleReset = () => {
+    setAlert({
+      show:true, tipe:'confirm', judul:'Reset Soal?', pesan:'Semua soal kustom akan dihapus dan kembali ke soal default (800 soal).',
+      yesLabel:'Ya, Reset', noLabel:'Batal',
+      onYes: () => {
+        const def = resetSoal();
+        setSoalList(def);
+        setAlert({ show:false });
+      },
+      onNo: () => setAlert({ show:false }),
+    });
   };
 
-  const handleDownloadDocx = () => {
-    // Create a simple text file as DOCX placeholder
-    const content = `No\tSoal\tPilihan A\tPilihan B\tPilihan C\tPilihan D\tJawaban\tPenjelasan
-1\tApa kepanjangan dari HTML?\tHyperText Markup Language\tHighText Machine Language\tHyperText Machine Learning\tHyperlink Text Markup\tA\tHTML adalah HyperText Markup Language
-2\tSiapa penemu WWW?\tBill Gates\tTim Berners-Lee\tLinus Torvalds\tSteve Jobs\tB\tTim Berners-Lee menciptakan WWW pada 1989`;
-    const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    saveAs(blob, 'contoh-soal-arlearn.docx');
-  };
+  const mapelColor = (m) => MAPEL_OPTS.find(o => o.value===m)?.color || '#94A3B8';
+  const mapelLabel = (m) => MAPEL_OPTS.find(o => o.value===m)?.label || m;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 animate-fadeIn">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 animate-fadeIn">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-display font-black text-2xl" style={{ color: '#F0F6FF' }}>Kelola Soal</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>{soalList.length} soal tersedia · {soalList.filter(s => !isDefaultSoal(s.id)).length} soal custom</p>
+          <h2 className="font-black text-xl" style={{ color:'#F0F6FF' }}>Kelola Soal</h2>
+          <p className="text-xs mt-0.5" style={{ color:'#475569' }}>{soalList.length} soal tersimpan</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowFormat(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.15)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(245,158,11,0.1)'}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Format Upload
-          </button>
-          <button onClick={handleDownloadJs}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: 'rgba(245,158,11,0.08)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.15)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.13)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(245,158,11,0.08)'}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Contoh .js
-          </button>
-          <button onClick={handleDownloadDocx}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: 'rgba(59,130,246,0.08)', color: '#3B82F6', border: '1px solid rgba(59,130,246,0.15)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(59,130,246,0.13)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(59,130,246,0.08)'}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Contoh .docx
-          </button>
+        <div className="flex gap-2">
           <button onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: 'rgba(239,68,68,0.08)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.15)' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.13)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            Reset Default
+            className="px-3 py-1.5 rounded-lg text-xs font-bold"
+            style={{ background:'rgba(239,68,68,0.1)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.2)' }}>
+            <i className="fa-solid fa-rotate-right mr-1" />Reset
           </button>
-          <button onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold btn-gradient">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload Soal
+          <button onClick={() => { setForm(BLANK); setEditId(null); setShowForm(s => !s); }}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold btn-gradient">
+            <i className={`fa-solid fa-${showForm?'minus':'plus'} mr-1`} />
+            {showForm ? 'Tutup' : 'Tambah'}
           </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-4 relative">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#475569' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <input
-          type="text"
-          placeholder="Cari soal..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm input-neon"
-          style={{ background: '#111827', border: '1px solid #1E293B', color: '#F0F6FF', outline: 'none' }}
-        />
-      </div>
+      {/* Form tambah/edit */}
+      {showForm && (
+        <div className="rounded-2xl p-5 mb-5 animate-fadeIn"
+          style={{ background:'#111827', border:'1px solid rgba(0,229,255,0.15)' }}>
+          <h3 className="font-bold text-base mb-4" style={{ color:'#F0F6FF' }}>
+            {editId ? '✏️ Edit Soal' : '➕ Tambah Soal Baru'}
+          </h3>
 
-      {/* Table */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #1E293B' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: '#0B1121' }}>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569', width: '50px' }}>#</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Soal</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: '#475569', width: '100px' }}>Pilihan</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: '#475569', width: '90px' }}>Tipe</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569', width: '80px' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s, i) => (
-                <tr key={s.id} className="table-row transition-colors" style={{ borderTop: '1px solid #111827' }}>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-bold" style={{ color: '#475569' }}>{i + 1}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium line-clamp-2" style={{ color: '#94A3B8' }}>{s.teks}</p>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-xs" style={{ color: '#475569' }}>{s.pilihan?.length || 0} opsi</span>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    {isDefaultSoal(s.id) ? (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: 'rgba(0,229,255,0.1)', color: '#00E5FF', border: '1px solid rgba(0,229,255,0.2)' }}>Default</span>
-                    ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: 'rgba(168,85,247,0.1)', color: '#A855F7', border: '1px solid rgba(168,85,247,0.2)' }}>Custom</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleDelete(s.id)}
-                      disabled={isDefaultSoal(s.id)}
-                      className="p-1.5 rounded-lg transition-all disabled:opacity-25 disabled:cursor-not-allowed"
-                      style={{ color: '#EF4444' }}
-                      onMouseEnter={e => { if (!isDefaultSoal(s.id)) e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,01-2,2H8a2,2,0,01-2-2L5,6m3,0V4a1,1,0,011-1h4a1,1,0,011,1v2"/></svg>
-                    </button>
-                  </td>
-                </tr>
+          {/* Mapel */}
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 uppercase tracking-wider" style={{ color:'#64748B' }}>Mata Pelajaran</label>
+            <div className="flex flex-wrap gap-2">
+              {MAPEL_OPTS.map(m => (
+                <button key={m.value} onClick={() => setForm(f => ({ ...f, mapel: m.value }))}
+                  className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    background: form.mapel===m.value ? `${m.color}20` : '#1E293B',
+                    color: form.mapel===m.value ? m.color : '#64748B',
+                    border: form.mapel===m.value ? `1px solid ${m.color}50` : '1px solid #2D3748',
+                  }}>{m.label}</button>
               ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-10 text-sm" style={{ color: '#334155' }}>
-                    {search ? 'Tidak ada soal yang cocok dengan pencarian.' : 'Belum ada soal.'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          {/* Teks soal */}
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 uppercase tracking-wider" style={{ color:'#64748B' }}>Teks Soal (LaTeX: $...$ atau $$...$$)</label>
+            <textarea rows={3} value={form.teks} onChange={e => setForm(f => ({ ...f, teks: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm input-neon resize-none"
+              placeholder="Contoh: Nilai dari $x^2+2x+1$ jika $x=3$ adalah..."
+              style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+          </div>
+
+          {/* Pilihan */}
+          {['A','B','C','D'].map((label, j) => (
+            <div key={j} className="mb-2 flex items-center gap-2">
+              <button onClick={() => setForm(f => ({ ...f, jawabanBenar: j }))}
+                className="w-7 h-7 rounded-lg flex-shrink-0 font-bold text-xs flex items-center justify-center transition-all"
+                style={{
+                  background: form.jawabanBenar===j ? 'rgba(16,185,129,0.2)' : '#1E293B',
+                  color: form.jawabanBenar===j ? '#10B981' : '#64748B',
+                  border: form.jawabanBenar===j ? '1px solid rgba(16,185,129,0.4)' : '1px solid #2D3748',
+                }}>{label}</button>
+              <input value={form.pilihan[j]} onChange={e => {
+                  const p = [...form.pilihan]; p[j] = e.target.value;
+                  setForm(f => ({ ...f, pilihan: p }));
+                }}
+                className="flex-1 rounded-xl px-3 py-2 text-sm input-neon"
+                placeholder={`Pilihan ${label}...`}
+                style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+            </div>
+          ))}
+
+          {/* Penjelasan */}
+          <div className="mt-3">
+            <label className="block text-xs font-bold mb-1 uppercase tracking-wider" style={{ color:'#64748B' }}>Penjelasan Singkat</label>
+            <textarea rows={2} value={form.penjelasan} onChange={e => setForm(f => ({ ...f, penjelasan: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm input-neon resize-none"
+              placeholder="Jelaskan jawaban yang benar..."
+              style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => { setShowForm(false); setEditId(null); setForm(BLANK); }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background:'#1E293B', color:'#94A3B8', border:'1px solid #2D3748' }}>Batal</button>
+            <button onClick={save} className="flex-1 py-2.5 rounded-xl text-sm font-bold btn-gradient">
+              <i className="fa-solid fa-floppy-disk mr-1" />{editId ? 'Perbarui' : 'Simpan'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filter & Search */}
+      <div className="mb-4 space-y-2">
+        <div className="relative">
+          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color:'#475569' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 py-2.5 rounded-xl text-sm input-neon"
+            placeholder="Cari soal..."
+            style={{ background:'#111827', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setFilter('all')}
+            className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+            style={{ background: filter==='all' ? 'rgba(249,115,22,0.15)' : '#1E293B', color: filter==='all' ? '#F97316':'#64748B', border: filter==='all'?'1px solid rgba(249,115,22,0.3)':'1px solid #2D3748' }}>
+            Semua ({soalList.length})
+          </button>
+          {MAPEL_OPTS.map(m => {
+            const count = soalList.filter(s => s.mapel === m.value).length;
+            return (
+              <button key={m.value} onClick={() => setFilter(m.value)}
+                className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                style={{ background: filter===m.value ? `${m.color}20` : '#1E293B', color: filter===m.value?m.color:'#64748B', border: filter===m.value?`1px solid ${m.color}40`:'1px solid #2D3748' }}>
+                {m.label} ({count})
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Modals & Alerts */}
-      <UploadSoalModal
-        show={showUpload}
-        onClose={() => setShowUpload(false)}
-        onSuccess={() => setSoalList(getSoal())}
-      />
-      <FormatUploadModal show={showFormat} onClose={() => setShowFormat(false)} />
+      {/* List */}
+      <div className="space-y-2 pb-4">
+        {filtered.length === 0 && (
+          <div className="text-center py-12" style={{ color:'#334155' }}>
+            <i className="fa-solid fa-box-open text-3xl mb-2 block" />
+            <p className="text-sm">Tidak ada soal ditemukan</p>
+          </div>
+        )}
+        {filtered.map((s, idx) => (
+          <div key={s.id} className="rounded-xl p-4 card-hover"
+            style={{ background:'#111827' }}>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{ background:`${mapelColor(s.mapel)}15`, color:mapelColor(s.mapel), border:`1px solid ${mapelColor(s.mapel)}30` }}>
+                    {mapelLabel(s.mapel)}
+                  </span>
+                  <span className="text-xs" style={{ color:'#334155' }}>#{idx+1}</span>
+                </div>
+                <p className="text-sm leading-relaxed line-clamp-2" style={{ color:'#94A3B8' }}>{s.teks.replace(/\$+/g,'').replace(/\\/g,'')}</p>
+                <p className="text-xs mt-1" style={{ color:'#10B981' }}>
+                  ✓ {s.pilihan[s.jawabanBenar]?.replace(/\$+/g,'').replace(/\\/g,'').slice(0,50)}
+                </p>
+              </div>
+              <div className="flex gap-1.5 flex-shrink-0">
+                <button onClick={() => edit(s)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                  style={{ background:'rgba(0,229,255,0.08)', color:'#00E5FF', border:'1px solid rgba(0,229,255,0.15)' }}>
+                  <i className="fa-solid fa-pen text-xs" />
+                </button>
+                <button onClick={() => hapus(s.id)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                  style={{ background:'rgba(239,68,68,0.08)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.15)' }}>
+                  <i className="fa-solid fa-trash text-xs" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <CustomAlert
-        show={!!deleteTarget}
-        tipe="confirm"
-        judul="Hapus Soal?"
-        pesan="Soal ini akan dihapus permanen dari bank soal ARLearn."
-        yesLabel="Hapus"
-        noLabel="Batal"
-        onYes={konfirmasiDelete}
-        onNo={() => setDeleteTarget(null)}
-      />
-      <CustomAlert
-        show={showResetConfirm}
-        tipe="confirm"
-        judul="Reset ke Default?"
-        pesan="Semua soal custom akan dihapus dan bank soal dikembalikan ke 10 soal bawaan. Aksi ini tidak bisa dibatalkan."
-        yesLabel="Ya, Reset"
-        noLabel="Batal"
-        onYes={konfirmasiReset}
-        onNo={() => setShowResetConfirm(false)}
-      />
-      <CustomAlert
-        show={alert.show}
-        tipe={alert.tipe}
-        judul={alert.judul}
-        pesan={alert.pesan}
-        onOk={() => setAlert({ show: false })}
-      />
+      <CustomAlert show={alert.show} tipe={alert.tipe} judul={alert.judul} pesan={alert.pesan}
+        yesLabel={alert.yesLabel} noLabel={alert.noLabel}
+        onOk={() => setAlert({ show:false })}
+        onYes={alert.onYes} onNo={alert.onNo} />
     </div>
   );
 }
