@@ -1,43 +1,47 @@
-import { soalDefault } from '../data/soalDefault.js';
+import { soalKimia }     from '../data/soalKimia';
+import { soalFisika }    from '../data/soalFisika';
+import { soalMtkLanjut } from '../data/soalMtkLanjut';
+import { soalMtkWajib }  from '../data/soalMtkWajib';
 
-const KEY = 'soalARLearn';
+const STORAGE_KEY = 'soalARLearn';
+
+const ALL_DEFAULT = [
+  ...soalKimia,
+  ...soalFisika,
+  ...soalMtkLanjut,
+  ...soalMtkWajib,
+];
 
 export function getSoal() {
   try {
-    const stored = localStorage.getItem(KEY);
-    if (!stored) return [...soalDefault];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...soalDefault];
-  } catch {
-    return [...soalDefault];
-  }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return ALL_DEFAULT;
 }
 
-export function setSoal(soalArr) {
-  localStorage.setItem(KEY, JSON.stringify(soalArr));
+export function setSoal(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
-export function addSoal(soalBaru) {
+// Tambah soal baru ke bank soal (dipakai UploadSoalModal)
+export function addSoal(newSoal) {
   const current = getSoal();
-  const maxId = current.reduce((max, s) => Math.max(max, s.id), 0);
-  const withIds = soalBaru.map((s, i) => ({ ...s, id: maxId + i + 1 }));
-  const updated = [...current, ...withIds];
-  setSoal(updated);
-  return updated;
+  const baseId  = Date.now();
+  const withId  = newSoal.map((s, i) => ({
+    id: s.id || baseId + i,
+    ...s,
+  }));
+  const merged = [...current, ...withId];
+  setSoal(merged);
+  return merged;
 }
 
-export function deleteSoal(id) {
-  const current = getSoal();
-  const filtered = current.filter(s => s.id !== id);
-  setSoal(filtered);
-  return filtered;
+export function resetSoal() {
+  localStorage.removeItem(STORAGE_KEY);
+  return ALL_DEFAULT;
 }
 
-export function resetToDefault() {
-  setSoal([...soalDefault]);
-  return [...soalDefault];
-}
-
-export function isDefaultSoal(id) {
-  return soalDefault.some(s => s.id === id);
+export function getDefaultSoal() {
+  return ALL_DEFAULT;
 }
