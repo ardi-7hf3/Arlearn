@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import LoginPage from './components/LoginPage';
@@ -7,6 +7,7 @@ import RiwayatPage from './components/RiwayatPage';
 import KelolaSoalPage from './components/KelolaSoalPage';
 import Navbar from './components/Navbar';
 import CustomAlert from './components/CustomAlert';
+import UploadSoalModal from './components/UploadSoalModal';
 
 const SESSION_KEY = 'arlearn_session';
 const USER_KEY    = 'arlearn_user';
@@ -20,6 +21,7 @@ export default function App() {
   });
   const [page, setPage]             = useState('dashboard');
   const [logoutAlert, setLogoutAlert] = useState(false);
+  const [showUpload, setShowUpload]   = useState(false);
 
   const handleLogin = (name) => {
     localStorage.setItem(SESSION_KEY, 'true');
@@ -41,12 +43,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: '#050B18' }}>
-      <Navbar activePage={page} setPage={setPage} onLogout={handleLogout} userName={userName} />
-      <main className="pt-16">
+      <Navbar
+        activePage={page}
+        setPage={setPage}
+        onLogout={handleLogout}
+        userName={userName}
+        onUpload={() => setShowUpload(true)}
+      />
+      <main className="pt-14">
         {page === 'dashboard' && <DashboardTryout onGoRiwayat={() => setPage('riwayat')} userName={userName} />}
         {page === 'riwayat'   && <RiwayatPage />}
         {page === 'kelola'    && <KelolaSoalPage />}
       </main>
+
+      <UploadSoalModal
+        show={showUpload}
+        onClose={() => setShowUpload(false)}
+        onSuccess={() => setShowUpload(false)}
+      />
 
       <CustomAlert show={logoutAlert} tipe="confirm"
         judul="Keluar dari ARLearn?"

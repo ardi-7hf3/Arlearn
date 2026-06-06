@@ -60,6 +60,7 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
+/* Alert animations */
 @keyframes alertFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -91,15 +92,15 @@ body {
 ::-webkit-scrollbar-thumb { background: #1E293B; border-radius:4px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* Mobile bottom nav spacing */
+/* Mobile bottom nav spacing — 72px nav height */
 @media (max-width: 640px) {
-  main { padding-bottom: 72px !important; }
+  main { padding-bottom: 80px !important; }
 }
 
 /* KaTeX */
 .katex { font-size: 1em !important; }
 
-/* ── Accordion (RiwayatPage detail soal) ── */
+/* Accordion */
 .accordion-content {
   max-height: 0;
   overflow: hidden;
@@ -109,7 +110,7 @@ body {
   max-height: 600px;
 }
 
-/* ── Line clamp ── */
+/* Line clamp */
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
