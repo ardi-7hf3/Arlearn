@@ -113,11 +113,7 @@ export default function LoginPage({ onLogin }) {
           </p>
         </div>
 
-        <div className="flex justify-center gap-2 mt-6">
-          {[1,2,3].map(i => (
-            <div key={i} className="rounded-full" style={{ width: 6, height: 6, background: i === 1 ? '#00E5FF' : '#1E293B' }} />
-          ))}
-        </div>
+
       </div>
 
       <CustomAlert show={alert.show} tipe={alert.tipe} judul={alert.judul} pesan={alert.pesan}
