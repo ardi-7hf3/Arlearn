@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import CustomAlert from './CustomAlert';
 
 const USERS = [
-  { username: 'Gita',  password: 'akuhitam', displayName: 'Gita' },
-  { username: 'Andi',  password: 'akuhitam', displayName: 'Andi' },
-  { username: 'Raisha',password: 'akuhitam', displayName: 'Raisha' },
-  { username: 'Imam',  password: 'akuhitam', displayName: 'Imam' },
+  { username: 'Gita',    password: 'akuhitam', displayName: 'Gita'    },
+  { username: 'Andi',    password: 'akuhitam', displayName: 'Andi'    },
+  { username: 'Raisha',  password: 'akuhitam', displayName: 'Raisha'  },
+  { username: 'Imam',    password: 'akuhitam', displayName: 'Imam'    },
+  { username: 'Ardi7HF3',password: 'akuardi',  displayName: 'Ardi'    },
 ];
 
 export default function LoginPage({ onLogin }) {
