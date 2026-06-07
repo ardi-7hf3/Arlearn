@@ -35,7 +35,7 @@ function getMapelConfig(soal) {
 
 const LABEL_OPTS = ['A', 'B', 'C', 'D'];
 
-export default function DashboardTryout({ onGoRiwayat, userName }) {
+export default function DashboardTryout({ onGoRiwayat, userName, filterMapel, filterBab, onBack }) {
   const [soalList, setSoalList]       = useState([]);
   const [currentIdx, setCurrentIdx]   = useState(0);
   const [jawabanUser, setJawabanUser] = useState({});
@@ -47,7 +47,16 @@ export default function DashboardTryout({ onGoRiwayat, userName }) {
   const [alertSelesai, setAlertSelesai] = useState(false);
   const [animKey, setAnimKey]         = useState(0);
 
-  useEffect(() => { setSoalList(getSoal()); }, []);
+  useEffect(() => {
+    let list = getSoal();
+    if (filterMapel) {
+      list = list.filter(s => s.mapel === filterMapel);
+    }
+    if (filterBab && filterBab !== '__all__') {
+      list = list.filter(s => s.bab === filterBab);
+    }
+    setSoalList(list);
+  }, [filterMapel, filterBab]);
 
   const total         = soalList.length;
   const terjawab      = Object.keys(jawabanUser).length;
@@ -87,17 +96,32 @@ export default function DashboardTryout({ onGoRiwayat, userName }) {
   };
 
   const handleTryoutLagi = () => {
-    setShowHasil(false);
-    setJawabanUser({});
-    goTo(0);
-    setSoalList(getSoal());
+    if (onBack) {
+      onBack();
+    } else {
+      setShowHasil(false);
+      setJawabanUser({});
+      goTo(0);
+      let list = getSoal();
+      if (filterMapel) list = list.filter(s => s.mapel === filterMapel);
+      if (filterBab && filterBab !== '__all__') list = list.filter(s => s.bab === filterBab);
+      setSoalList(list);
+    }
   };
 
-  const mapelCfg = getMapelConfig(soal);
+  const mapelCfg = getMapelConfig(soal || soalList[0]);
 
   if (!soal) return (
-    <div className="flex items-center justify-center h-64" style={{ color: '#64748B' }}>
-      <i className="fa-solid fa-spinner fa-spin text-2xl" />
+    <div className="flex flex-col items-center justify-center h-64 gap-4" style={{ color: '#64748B' }}>
+      <i className="fa-solid fa-box-open text-3xl" />
+      <p className="text-sm">Tidak ada soal untuk bab ini.</p>
+      {onBack && (
+        <button onClick={onBack}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
+          style={{ background: 'linear-gradient(135deg,#F97316,#FB923C)', color: '#fff' }}>
+          <i className="fa-solid fa-arrow-left text-xs" /> Kembali
+        </button>
+      )}
     </div>
   );
 
@@ -106,6 +130,26 @@ export default function DashboardTryout({ onGoRiwayat, userName }) {
 
       {/* ── Hero ── */}
       <div className="mb-6">
+        {/* Back button + info bab */}
+        {onBack && (
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={onBack}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: '#111827', color: '#94A3B8', border: '1px solid #1E293B' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(249,115,22,0.4)'; e.currentTarget.style.color='#F97316'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='#1E293B'; e.currentTarget.style.color='#94A3B8'; }}>
+              <i className="fa-solid fa-arrow-left text-xs" /> Ganti Bab
+            </button>
+            {mapelCfg && (
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ background: mapelCfg.bg, color: mapelCfg.color, border: `1px solid ${mapelCfg.border}` }}>
+                <i className="fa-solid fa-book-open mr-1.5" />
+                {soalList[0]?.namaBab || mapelCfg.label}
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div>
             <h1 style={{ fontFamily: '"Poppins", serif', fontWeight: 800, fontStyle: 'italic',

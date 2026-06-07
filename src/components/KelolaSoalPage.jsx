@@ -29,6 +29,7 @@ const MAPEL_OPTS = [
   { value:'fisika',    label:'Fisika',      color:'#00E5FF', icon:'fa-solid fa-atom',           varExport:'soalFisika'   },
   { value:'mtkLanjut', label:'MTK Lanjut', color:'#A78BFA', icon:'fa-solid fa-infinity',       varExport:'soalMtkLanjut'},
   { value:'mtkWajib',  label:'MTK Wajib',  color:'#10B981', icon:'fa-solid fa-calculator',     varExport:'soalMtkWajib' },
+  { value:'pjok',      label:'PJOK',       color:'#F43F5E', icon:'fa-solid fa-dumbbell',         varExport:'soalPJOK'     },
 ];
 
 const BLANK = { teks:'', pilihan:['','','',''], jawabanBenar:0, penjelasan:'', mapel:'kimia', bab:'bab1', namaBab:'' };
@@ -168,6 +169,19 @@ export default function KelolaSoalPage() {
     });
   };
 
+  const hapusSemua = () => {
+    setAlert({
+      show:true, tipe:'confirm',
+      judul:'Hapus Semua Soal?',
+      pesan:`Semua ${soalList.length} soal akan dihapus permanen dan bank soal menjadi kosong. Tindakan ini tidak bisa dibatalkan.`,
+      yesLabel:'Ya, Hapus Semua', noLabel:'Batal',
+      onYes: () => {
+        setSoal([]); setSoalList([]); setAlert({ show:false });
+      },
+      onNo: () => setAlert({ show:false }),
+    });
+  };
+
   const mapelColor = (m) => MAPEL_OPTS.find(o => o.value===m)?.color || '#94A3B8';
   const mapelLabel = (m) => MAPEL_OPTS.find(o => o.value===m)?.label || m;
   const mapelIcon  = (m) => MAPEL_OPTS.find(o => o.value===m)?.icon  || 'fa-solid fa-circle';
@@ -243,6 +257,15 @@ export default function KelolaSoalPage() {
                 </div>              </div>
             )}
           </div>
+
+          {/* Hapus Semua */}
+          <button onClick={hapusSemua}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
+            style={{ background:'rgba(239,68,68,0.15)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.3)' }}
+            title="Hapus semua soal dari bank soal">
+            <i className="fa-solid fa-trash-can" />
+            <span className="hidden sm:inline">Hapus Semua</span>
+          </button>
 
           {/* Reset */}
           <button onClick={handleReset}
