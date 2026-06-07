@@ -41,13 +41,14 @@ export default function Navbar({ activePage, setPage, onLogout, userName, onUplo
             <i className="fa-solid fa-circle-user text-sm" style={{ color:'#00E5FF' }} />
             <span className="text-sm font-semibold" style={{ color:'#94A3B8' }}>{userName}</span>
           </div>
+          {/* Tombol Keluar — hanya tampil di desktop (sm ke atas), mobile pakai bottom nav */}
           <button onClick={onLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
             style={{ background:'rgba(239,68,68,0.1)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.18)' }}
             onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.2)'}
             onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'}>
             <i className="fa-solid fa-right-from-bracket" />
-            <span className="hidden sm:inline">Keluar</span>
+            Keluar
           </button>
         </div>
       </nav>
@@ -96,11 +97,13 @@ export default function Navbar({ activePage, setPage, onLogout, userName, onUplo
             <span className="text-[10px] font-semibold">Kelola</span>
           </button>
 
-          {/* Profile */}
+          {/* Keluar */}
           <button onClick={onLogout}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-all"
-            style={{ color:'#475569' }}>
-            <i className="fa-solid fa-circle-user text-lg" />
+            style={{ color:'#475569' }}
+            onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
+            onMouseLeave={e => e.currentTarget.style.color='#475569'}>
+            <i className="fa-solid fa-door-open text-lg" />
             <span className="text-[10px] font-semibold">Keluar</span>
           </button>
 

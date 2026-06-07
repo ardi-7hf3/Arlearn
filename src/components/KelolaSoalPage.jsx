@@ -3,6 +3,26 @@ import { getSoal, setSoal, resetSoal } from '../utils/soalStorage';
 import CustomAlert from './CustomAlert';
 import UploadSoalModal from './UploadSoalModal';
 import FormatUploadModal from './FormatUploadModal';
+import LatexRenderer from './LatexRenderer';
+
+/* ── Mini preview strip bawah input ── */
+function LatexPreview({ text, placeholder = 'Preview akan muncul di sini...' }) {
+  if (!text?.trim()) return (
+    <div className="mt-1.5 px-3 py-2 rounded-lg text-xs italic"
+      style={{ background: 'rgba(255,255,255,0.02)', color: '#334155', border: '1px dashed #1E293B' }}>
+      {placeholder}
+    </div>
+  );
+  return (
+    <div className="mt-1.5 px-3 py-2 rounded-lg text-sm leading-relaxed"
+      style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.12)', color: '#CBD5E1' }}>
+      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: '#1E4D5C' }}>
+        <i className="fa-solid fa-eye mr-1" />Preview
+      </span>
+      <LatexRenderer text={text} />
+    </div>
+  );
+}
 
 const MAPEL_OPTS = [
   { value:'kimia',     label:'Kimia',       color:'#F59E0B', icon:'fa-solid fa-flask',          varExport:'soalKimia'    },
@@ -11,7 +31,7 @@ const MAPEL_OPTS = [
   { value:'mtkWajib',  label:'MTK Wajib',  color:'#10B981', icon:'fa-solid fa-calculator',     varExport:'soalMtkWajib' },
 ];
 
-const BLANK = { teks:'', pilihan:['','','',''], jawabanBenar:0, penjelasan:'', mapel:'kimia' };
+const BLANK = { teks:'', pilihan:['','','',''], jawabanBenar:0, penjelasan:'', mapel:'kimia', bab:'bab1', namaBab:'' };
 
 function downloadTemplate(mapel) {
   const varName = mapel.varExport;
@@ -81,6 +101,7 @@ export const ${varName} = [
 export default function KelolaSoalPage() {
   const [soalList, setSoalList] = useState(getSoal);
   const [filter, setFilter]     = useState('all');
+  const [filterBab, setFilterBab] = useState('all');
   const [form, setForm]         = useState(BLANK);
   const [editId, setEditId]     = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -90,10 +111,19 @@ export default function KelolaSoalPage() {
   const [showUpload, setShowUpload]     = useState(false);
   const [showFormat, setShowFormat]     = useState(false);
 
+  // Bab options for selected mapel
+  const babOptions = React.useMemo(() => {
+    const src = filter === 'all' ? soalList : soalList.filter(s => s.mapel === filter);
+    const map = {};
+    src.forEach(s => { if (s.bab && !map[s.bab]) map[s.bab] = s.namaBab || s.bab; });
+    return Object.entries(map).sort((a,b) => a[0].localeCompare(b[0]));
+  }, [soalList, filter]);
+
   const filtered = soalList.filter(s => {
     const matchMapel  = filter === 'all' || s.mapel === filter;
+    const matchBab    = filterBab === 'all' || s.bab === filterBab;
     const matchSearch = !search || s.teks.toLowerCase().includes(search.toLowerCase());
-    return matchMapel && matchSearch;
+    return matchMapel && matchBab && matchSearch;
   });
 
   const save = () => {
@@ -124,7 +154,7 @@ export default function KelolaSoalPage() {
   };
 
   const edit = (s) => {
-    setForm({ teks:s.teks, pilihan:[...s.pilihan], jawabanBenar:s.jawabanBenar, penjelasan:s.penjelasan||'', mapel:s.mapel||'kimia' });
+    setForm({ teks:s.teks, pilihan:[...s.pilihan], jawabanBenar:s.jawabanBenar, penjelasan:s.penjelasan||'', mapel:s.mapel||'kimia', bab:s.bab||'bab1', namaBab:s.namaBab||'' });
     setEditId(s.id); setShowForm(true);
     window.scrollTo({ top:0, behavior:'smooth' });
   };
@@ -168,15 +198,7 @@ export default function KelolaSoalPage() {
             <span className="hidden sm:inline">Format</span>
           </button>
 
-          {/* Upload soal */}
-          <button
-            onClick={() => setShowUpload(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
-            style={{ background:'rgba(0,229,255,0.1)', color:'#00E5FF', border:'1px solid rgba(0,229,255,0.25)' }}
-            title="Upload file soal .js / .docx">
-            <i className="fa-solid fa-upload" />
-            <span className="hidden sm:inline">Upload</span>
-          </button>
+          {/* Upload soal — dihapus dari header, sudah ada di bottom nav */}
 
           {/* Download Template */}
           <div className="relative">
@@ -270,6 +292,27 @@ export default function KelolaSoalPage() {
             </div>
           </div>
 
+          {/* Bab */}
+          <div className="mb-4">
+            <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider flex items-center gap-1.5" style={{ color:'#64748B' }}>
+              <i className="fa-solid fa-book-open text-xs" />Bab / Paket
+            </label>
+            <div className="flex gap-2">
+              <input value={form.bab} onChange={e => setForm(f => ({ ...f, bab: e.target.value }))}
+                className="w-24 rounded-xl px-3 py-2 text-sm input-neon text-center font-bold"
+                placeholder="bab1"
+                style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#00E5FF', outline:'none' }} />
+              <input value={form.namaBab} onChange={e => setForm(f => ({ ...f, namaBab: e.target.value }))}
+                className="flex-1 rounded-xl px-3 py-2 text-sm input-neon"
+                placeholder="Nama bab, contoh: Termokimia & Laju Reaksi"
+                style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+            </div>
+            <p className="text-[10px] mt-1 flex items-center gap-1" style={{ color:'#334155' }}>
+              <i className="fa-solid fa-circle-info" />
+              Kode bab: bab1, bab2, dst. Nama bab bebas diisi sesuai topik.
+            </p>
+          </div>
+
           {/* Teks soal */}
           <div className="mb-3">
             <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider flex items-center gap-1.5" style={{ color:'#64748B' }}>
@@ -280,6 +323,7 @@ export default function KelolaSoalPage() {
               className="w-full rounded-xl px-3 py-2.5 text-sm input-neon resize-none"
               placeholder="Contoh: Nilai dari $x^2+2x+1$ jika $x=3$ adalah..."
               style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+            <LatexPreview text={form.teks} placeholder="Ketik soal di atas untuk lihat preview LaTeX..." />
           </div>
 
           {/* Pilihan */}
@@ -290,23 +334,32 @@ export default function KelolaSoalPage() {
             </label>
             <div className="space-y-2">
               {['A','B','C','D'].map((label, j) => (
-                <div key={j} className="flex items-center gap-2">
-                  <button onClick={() => setForm(f => ({ ...f, jawabanBenar: j }))}
-                    className="w-8 h-8 rounded-lg flex-shrink-0 font-bold text-xs flex items-center justify-center transition-all"
-                    style={{
-                      background: form.jawabanBenar===j ? 'rgba(16,185,129,0.2)' : '#1E293B',
-                      color:      form.jawabanBenar===j ? '#10B981' : '#64748B',
-                      border:     form.jawabanBenar===j ? '1px solid rgba(16,185,129,0.5)' : '1px solid #2D3748',
-                    }}>
-                    {form.jawabanBenar===j ? <i className="fa-solid fa-check text-xs" /> : label}
-                  </button>
-                  <input value={form.pilihan[j]} onChange={e => {
-                      const p = [...form.pilihan]; p[j] = e.target.value;
-                      setForm(f => ({ ...f, pilihan: p }));
-                    }}
-                    className="flex-1 rounded-xl px-3 py-2 text-sm input-neon"
-                    placeholder={`Pilihan ${label}...`}
-                    style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+                <div key={j}>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setForm(f => ({ ...f, jawabanBenar: j }))}
+                      className="w-8 h-8 rounded-lg flex-shrink-0 font-bold text-xs flex items-center justify-center transition-all"
+                      style={{
+                        background: form.jawabanBenar===j ? 'rgba(16,185,129,0.2)' : '#1E293B',
+                        color:      form.jawabanBenar===j ? '#10B981' : '#64748B',
+                        border:     form.jawabanBenar===j ? '1px solid rgba(16,185,129,0.5)' : '1px solid #2D3748',
+                      }}>
+                      {form.jawabanBenar===j ? <i className="fa-solid fa-check text-xs" /> : label}
+                    </button>
+                    <input value={form.pilihan[j]} onChange={e => {
+                        const p = [...form.pilihan]; p[j] = e.target.value;
+                        setForm(f => ({ ...f, pilihan: p }));
+                      }}
+                      className="flex-1 rounded-xl px-3 py-2 text-sm input-neon"
+                      placeholder={`Pilihan ${label}...`}
+                      style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+                  </div>
+                  {/* Inline preview per pilihan */}
+                  {form.pilihan[j]?.trim() && (
+                    <div className="ml-10 mt-1 px-2.5 py-1.5 rounded-lg text-sm"
+                      style={{ background:'rgba(0,229,255,0.03)', border:'1px solid rgba(0,229,255,0.08)', color:'#94A3B8' }}>
+                      <LatexRenderer text={form.pilihan[j]} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -321,6 +374,7 @@ export default function KelolaSoalPage() {
               className="w-full rounded-xl px-3 py-2.5 text-sm input-neon resize-none"
               placeholder="Jelaskan mengapa jawaban tersebut benar..."
               style={{ background:'#0B1121', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
+            <LatexPreview text={form.penjelasan} placeholder="Ketik penjelasan di atas untuk lihat preview LaTeX..." />
           </div>
 
           <div className="flex gap-2">
@@ -346,8 +400,10 @@ export default function KelolaSoalPage() {
             placeholder="Cari soal..."
             style={{ background:'#111827', border:'1px solid #1E293B', color:'#F0F6FF', outline:'none' }} />
         </div>
+
+        {/* Filter Mapel */}
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setFilter('all')}
+          <button onClick={() => { setFilter('all'); setFilterBab('all'); }}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
             style={{
               background: filter==='all' ? 'rgba(249,115,22,0.15)' : '#1E293B',
@@ -360,7 +416,7 @@ export default function KelolaSoalPage() {
           {MAPEL_OPTS.map(m => {
             const count = soalList.filter(s => s.mapel === m.value).length;
             return (
-              <button key={m.value} onClick={() => setFilter(m.value)}
+              <button key={m.value} onClick={() => { setFilter(m.value); setFilterBab('all'); }}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
                 style={{
                   background: filter===m.value ? `${m.color}18` : '#1E293B',
@@ -373,6 +429,49 @@ export default function KelolaSoalPage() {
             );
           })}
         </div>
+
+        {/* Filter Bab — muncul hanya jika mapel dipilih & ada bab */}
+        {babOptions.length > 0 && (
+          <div className="rounded-xl p-3" style={{ background:'#0B1121', border:'1px solid #1E293B' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color:'#334155' }}>
+              <i className="fa-solid fa-book-open" style={{ color:'#475569' }} />
+              Filter Bab
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setFilterBab('all')}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1"
+                style={{
+                  background: filterBab==='all' ? 'rgba(249,115,22,0.15)' : '#1E293B',
+                  color:      filterBab==='all' ? '#F97316' : '#64748B',
+                  border:     filterBab==='all' ? '1px solid rgba(249,115,22,0.3)' : '1px solid #2D3748',
+                }}>
+                <i className="fa-solid fa-list text-xs" />
+                Semua Bab
+              </button>
+              {babOptions.map(([kode, nama]) => {
+                const babNum = kode.replace('bab','');
+                const mapelCfg = filter !== 'all' ? MAPEL_OPTS.find(o=>o.value===filter) : null;
+                const c = mapelCfg?.color || '#94A3B8';
+                const count = soalList.filter(s =>
+                  (filter==='all' || s.mapel===filter) && s.bab===kode
+                ).length;
+                return (
+                  <button key={kode} onClick={() => setFilterBab(kode)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+                    style={{
+                      background: filterBab===kode ? `${c}15` : '#1E293B',
+                      color:      filterBab===kode ? c : '#64748B',
+                      border:     filterBab===kode ? `1px solid ${c}40` : '1px solid #2D3748',
+                    }}>
+                    <span className="font-black text-[10px]">B{babNum}</span>
+                    <span className="hidden sm:inline truncate max-w-[120px]">{nama}</span>
+                    <span className="opacity-60">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Soal List ── */}
@@ -392,22 +491,29 @@ export default function KelolaSoalPage() {
             style={{ background:'#111827', border:'1px solid #1A2235' }}>
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
                     style={{ background:`${mapelColor(s.mapel)}12`, color:mapelColor(s.mapel), border:`1px solid ${mapelColor(s.mapel)}28` }}>
                     <i className={`${mapelIcon(s.mapel)} text-xs`} />
                     {mapelLabel(s.mapel)}
                   </span>
+                  {s.bab && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                      style={{ background:'rgba(100,116,139,0.1)', color:'#64748B', border:'1px solid rgba(100,116,139,0.2)' }}>
+                      <i className="fa-solid fa-book text-[9px]" />
+                      {s.namaBab || s.bab}
+                    </span>
+                  )}
                   <span className="text-xs px-1.5 py-0.5 rounded" style={{ background:'#1E293B', color:'#334155' }}>
                     #{idx + 1}
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed line-clamp-2" style={{ color:'#94A3B8' }}>
-                  {s.teks.replace(/\$+/g,'').replace(/\\/g,'')}
+                  <LatexRenderer text={s.teks} />
                 </p>
                 <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color:'#10B981' }}>
                   <i className="fa-solid fa-circle-check text-xs" />
-                  {s.pilihan[s.jawabanBenar]?.replace(/\$+/g,'').replace(/\\/g,'').slice(0,60)}
+                  <LatexRenderer text={s.pilihan[s.jawabanBenar]?.slice(0, 80) || ''} />
                 </p>
               </div>
               <div className="flex gap-1.5 flex-shrink-0">

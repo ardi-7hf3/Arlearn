@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { parseDocxFile, parseJsFile } from '../utils/parseDocx';
 import { addSoal } from '../utils/soalStorage';
 import CustomAlert from './CustomAlert';
@@ -10,6 +11,23 @@ export default function UploadSoalModal({ show, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false });
   const fileRef = useRef();
+
+  useEffect(() => {
+    if (show) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [show]);
 
   if (!show) return null;
 
@@ -59,10 +77,10 @@ export default function UploadSoalModal({ show, onClose, onSuccess }) {
 
   const resetFile = () => { setFile(null); setPreview(null); };
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4"
-        style={{ background: 'rgba(5,11,24,0.88)', backdropFilter: 'blur(10px)' }}
+        style={{ background: 'rgba(5,11,24,0.92)', backdropFilter: 'blur(12px)', touchAction: 'none', overscrollBehavior: 'none' }}
         onClick={onClose}>
         <div className="w-full max-w-md rounded-2xl animate-scaleIn"
           style={{ background: '#111827', border: '1px solid rgba(0,229,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}
@@ -155,6 +173,7 @@ export default function UploadSoalModal({ show, onClose, onSuccess }) {
         pesan={alert.pesan}
         onOk={handleAlertOk}
       />
-    </>
+    </>,
+    document.body
   );
 }

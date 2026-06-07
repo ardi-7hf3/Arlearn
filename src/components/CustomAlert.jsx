@@ -7,8 +7,20 @@ export default function CustomAlert({
   okLabel = 'OK', yesLabel = 'Ya, Lanjutkan', noLabel = 'Batal'
 }) {
   useEffect(() => {
-    document.body.style.overflow = show ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (show) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
   }, [show]);
 
   if (!show) return null;
@@ -33,10 +45,12 @@ export default function CustomAlert({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        background: 'rgba(5,11,24,0.88)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'rgba(5,11,24,0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         animation: 'alertFadeIn 0.18s ease both',
+        touchAction: 'none',
+        overscrollBehavior: 'none',
       }}
     >
       <div
