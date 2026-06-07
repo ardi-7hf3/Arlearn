@@ -2,6 +2,7 @@ import { soalKimia }     from '../data/soalKimia';
 import { soalFisika }    from '../data/soalFisika';
 import { soalMtkLanjut } from '../data/soalMtkLanjut';
 import { soalMtkWajib }  from '../data/soalMtkWajib';
+import { soalPJOK }     from '../data/soalPJOK';
 
 const STORAGE_KEY = 'soalARLearn';
 
@@ -10,6 +11,7 @@ const ALL_DEFAULT = [
   ...soalFisika,
   ...soalMtkLanjut,
   ...soalMtkWajib,
+  ...soalPJOK,
 ];
 
 export function getSoal() {
