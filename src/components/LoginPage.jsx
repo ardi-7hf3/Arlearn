@@ -7,6 +7,7 @@ const USERS = [
   { username: 'Raisha',  password: 'akuhitam', displayName: 'Raisha'  },
   { username: 'Imam',    password: 'akuhitam', displayName: 'Imam'    },
   { username: 'Ardi7HF3',password: 'akuardi',  displayName: 'Ardi'    },
+  { username: 'Fikri',   password: 'akuhitam', displayName: 'Fikri'   },
 ];
 
 export default function LoginPage({ onLogin }) {
@@ -71,7 +72,7 @@ export default function LoginPage({ onLogin }) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <input type="text" className="w-full pl-10 pr-4 py-3 rounded-xl text-sm input-neon"
-                placeholder="Gita / Andi / Raisha / Imam"
+                placeholder="Gita / Andi / Fikri / ..."
                 value={username} onChange={e => setUsername(e.target.value)} onKeyDown={handleKey}
                 style={{ background: '#0B1121', border: '1px solid #1E293B', color: '#F0F6FF', outline: 'none' }} />
             </div>
