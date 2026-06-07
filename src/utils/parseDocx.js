@@ -160,6 +160,9 @@ function validateSoalArray(arr) {
       jawabanBenar: item.jawabanBenar,
       penjelasan:   item.penjelasan  || 'Tidak ada penjelasan.',
       pembahasan:   item.pembahasan  || item.penjelasan || 'Tidak ada pembahasan.',
+      ...(item.mapel    ? { mapel:    item.mapel    } : {}),
+      ...(item.bab      ? { bab:      item.bab      } : {}),
+      ...(item.namaBab  ? { namaBab:  item.namaBab  } : {}),
     });
   });
 
