@@ -1,88 +1,19 @@
-import React, { useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './index.css';
-import LoginPage from './components/LoginPage';
-import DashboardTryout from './components/DashboardTryout';
-import BabSelectorPage from './components/BabSelectorPage';
-import RiwayatPage from './components/RiwayatPage';
-import KelolaSoalPage from './components/KelolaSoalPage';
-import Navbar from './components/Navbar';
-import CustomAlert from './components/CustomAlert';
-import UploadSoalModal from './components/UploadSoalModal';
+// ============================================================
+//  App.jsx — Router utama ARLearn
+//  Hanya 2 "halaman": UserApp dan AdminPanel
+//  Semua logika ada di masing-masing file
+// ============================================================
 
-const SESSION_KEY = 'arlearn_session';
-const USER_KEY    = 'arlearn_user';
+import React, { useState } from 'react';
+import UserApp    from './components/UserApp';
+import AdminPanel from './components/AdminPanel';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    try { return localStorage.getItem(SESSION_KEY) === 'true'; } catch { return false; }
-  });
-  const [userName, setUserName] = useState(() => {
-    try { return localStorage.getItem(USER_KEY) || 'Pengguna'; } catch { return 'Pengguna'; }
-  });
-  const [page, setPage]             = useState('babSelector');
-  const [selectedFilter, setSelectedFilter] = useState(null);
-  const [logoutAlert, setLogoutAlert] = useState(false);
-  const [showUpload, setShowUpload]   = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
-  const handleLogin = (name) => {
-    localStorage.setItem(SESSION_KEY, 'true');
-    localStorage.setItem(USER_KEY, name);
-    setUserName(name);
-    setIsLoggedIn(true);
-    setPage('babSelector');
-  };
+  if (showAdmin) {
+    return <AdminPanel onBack={() => setShowAdmin(false)} />;
+  }
 
-  const handleLogout  = () => setLogoutAlert(true);
-  const konfirmasiLogout = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setIsLoggedIn(false);
-    setLogoutAlert(false);
-    setPage('babSelector');
-  };
-
-  if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
-
-  return (
-    <div className="min-h-screen" style={{ background: '#050B18' }}>
-      <Navbar
-        activePage={page === 'babSelector' ? 'dashboard' : page}
-        setPage={(p) => { if(p==='dashboard') setPage('babSelector'); else setPage(p); }}
-        onLogout={handleLogout}
-        userName={userName}
-        onUpload={() => setShowUpload(true)}
-      />
-      <main className="pt-14">
-        {page === 'babSelector' && (
-          <BabSelectorPage
-            userName={userName}
-            onMulaiTryout={(filter) => { setSelectedFilter(filter); setPage('dashboard'); }}
-          />
-        )}
-        {page === 'dashboard' && (
-          <DashboardTryout
-            onGoRiwayat={() => setPage('riwayat')}
-            userName={userName}
-            filterMapel={selectedFilter?.mapel}
-            filterBab={selectedFilter?.bab}
-            onBack={() => setPage('babSelector')}
-          />
-        )}
-        {page === 'riwayat'   && <RiwayatPage />}
-        {page === 'kelola'    && <KelolaSoalPage />}
-      </main>
-
-      <UploadSoalModal
-        show={showUpload}
-        onClose={() => setShowUpload(false)}
-        onSuccess={() => setShowUpload(false)}
-      />
-
-      <CustomAlert show={logoutAlert} tipe="confirm"
-        judul="Keluar dari ARLearn?"
-        pesan="Sesimu akan diakhiri. Kamu perlu login kembali untuk mengakses ARLearn."
-        yesLabel="Ya, Keluar" noLabel="Batal"
-        onYes={konfirmasiLogout} onNo={() => setLogoutAlert(false)} />
-    </div>
-  );
+  return <UserApp onNeedAdmin={() => setShowAdmin(true)} />;
 }
