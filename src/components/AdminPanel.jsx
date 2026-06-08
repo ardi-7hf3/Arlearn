@@ -1,30 +1,27 @@
 // ============================================================
 //  AdminPanel.jsx — Semua fitur admin ARLearn
-//  Berisi: Dashboard Stats, CRUD Soal, Import .js,
-//          Manajemen User (lihat, ubah role)
 // ============================================================
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
-// ─────────────────────────────────────────────────────────────
-//  KONSTANTA
-// ─────────────────────────────────────────────────────────────
 const MAPEL_LIST = [
-  { value:'kimia',     label:'Kimia',        icon:'⚗️',  color:'#F59E0B' },
-  { value:'fisika',    label:'Fisika',        icon:'⚛️',  color:'#00E5FF' },
-  { value:'mtkLanjut', label:'MTK Lanjut',   icon:'∞',   color:'#A78BFA' },
-  { value:'mtkWajib',  label:'MTK Wajib',    icon:'🔢',  color:'#10B981' },
-  { value:'pjok',      label:'PJOK',         icon:'🏃',  color:'#F43F5E' },
-  { value:'default',   label:'Umum/Default', icon:'📚',  color:'#94A3B8' },
+  { value:'kimia',     label:'Kimia',        icon:'science',       color:'#F59E0B' },
+  { value:'fisika',    label:'Fisika',        icon:'atom',          color:'#00E5FF' },
+  { value:'mtkLanjut', label:'MTK Lanjut',   icon:'functions',     color:'#A78BFA' },
+  { value:'mtkWajib',  label:'MTK Wajib',    icon:'calculate',     color:'#10B981' },
+  { value:'pjok',      label:'PJOK',         icon:'fitness_center',color:'#F43F5E' },
+  { value:'default',   label:'Umum/Default', icon:'menu_book',     color:'#94A3B8' },
 ];
 const BLANK = { mapel:'kimia', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', aktif:true };
 const getCfg = (v) => MAPEL_LIST.find(x=>x.value===v) || MAPEL_LIST[5];
 const PER_PAGE = 20;
 
-// ─────────────────────────────────────────────────────────────
-//  SHARED UI
-// ─────────────────────────────────────────────────────────────
+// Material Icon helper
+const MI = ({ name, style, className }) => (
+  <span className={`material-icons${className?' '+className:''}`} style={style}>{name}</span>
+);
+
 function Toast({ toast }) {
   if (!toast) return null;
   const bg = toast.type==='error'?'#F43F5E':toast.type==='warning'?'#F59E0B':'#00E5FF';
@@ -36,7 +33,7 @@ function Confirm({ open, title, msg, onYes, onNo, loading }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)' }}>
       <div className="rounded-2xl p-6 text-center max-w-sm w-full" style={{ background:'#0D1929', border:'1px solid #F43F5E44' }}>
-        <div className="text-4xl mb-3">⚠️</div>
+        <MI name="warning" style={{ color:'#F59E0B', fontSize:40, display:'block', margin:'0 auto 12px' }}/>
         <h3 className="font-bold text-lg mb-2" style={{ color:'#E2E8F0' }}>{title}</h3>
         <p className="text-sm mb-6" style={{ color:'#475569' }}>{msg}</p>
         <div className="flex gap-3">
@@ -50,7 +47,7 @@ function Confirm({ open, title, msg, onYes, onNo, loading }) {
 
 function MapelBadge({ mapel }) {
   const m = getCfg(mapel);
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background:m.color+'22', color:m.color, border:`1px solid ${m.color}44` }}>{m.icon} {m.label}</span>;
+  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background:m.color+'22', color:m.color, border:`1px solid ${m.color}44` }}><MI name={m.icon} style={{fontSize:12}}/>{m.label}</span>;
 }
 
 function FInput({ label, value, onChange, placeholder, type='text' }) {
@@ -73,9 +70,7 @@ function FTextarea({ label, value, onChange, placeholder, rows=3 }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  MODAL FORM SOAL
-// ─────────────────────────────────────────────────────────────
+// ─── MODAL FORM SOAL ───
 function SoalModal({ open, onClose, initial, onSave, saving }) {
   const [form, setForm] = useState(initial || BLANK);
   useEffect(()=>{ setForm(initial || BLANK); },[initial, open]);
@@ -86,15 +81,17 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ background:'linear-gradient(135deg,#00E5FF08,#0D1929)', borderBottom:'1px solid #1E3A5F' }}>
-          <h2 className="font-bold text-lg" style={{ color:'#00E5FF' }}>{initial?.id?'✏️ Edit Soal':'➕ Tambah Soal Baru'}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ color:'#475569', background:'#1E3A5F33' }}>✕</button>
+          <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}>
+            <MI name={initial?.id?'edit':'add_circle'} style={{fontSize:20}}/>{initial?.id?'Edit Soal':'Tambah Soal Baru'}
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ color:'#475569', background:'#1E3A5F33' }}><MI name="close" style={{fontSize:16}}/></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold mb-1" style={{ color:'#64748B' }}>MATA PELAJARAN</label>
               <select value={form.mapel} onChange={e=>set('mapel',e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background:'#0A1628', border:'1px solid #1E3A5F', color:'#CBD5E1' }}>
-                {MAPEL_LIST.map(m=><option key={m.value} value={m.value}>{m.icon} {m.label}</option>)}
+                {MAPEL_LIST.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
             <FInput label="BAB (contoh: bab1)" value={form.bab} onChange={v=>set('bab',v)} placeholder="bab1"/>
@@ -126,8 +123,8 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
         </div>
         <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop:'1px solid #1E3A5F' }}>
           <button onClick={onClose} className="px-5 py-2 rounded-xl text-sm font-medium" style={{ background:'#1E3A5F33', color:'#64748B' }}>Batal</button>
-          <button onClick={()=>onSave(form)} disabled={saving} className="px-6 py-2 rounded-xl text-sm font-bold" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:saving?.6:1 }}>
-            {saving?'Menyimpan...':'💾 Simpan Soal'}
+          <button onClick={()=>onSave(form)} disabled={saving} className="px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:saving?.6:1 }}>
+            <MI name="save" style={{fontSize:16}}/>{saving?'Menyimpan...':'Simpan Soal'}
           </button>
         </div>
       </div>
@@ -135,9 +132,7 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  MODAL IMPORT FILE .JS
-// ─────────────────────────────────────────────────────────────
+// ─── MODAL IMPORT ───
 function ImportModal({ open, onClose, onImport, saving }) {
   const [files, setFiles]   = useState([]);
   const [isDrag, setIsDrag] = useState(false);
@@ -178,14 +173,14 @@ function ImportModal({ open, onClose, onImport, saving }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.94)', backdropFilter:'blur(8px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
-          <h2 className="font-bold text-lg" style={{ color:'#00E5FF' }}>📥 Import Soal — Upload File .js</h2>
-          <button onClick={onClose} style={{ color:'#475569' }}>✕</button>
+          <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="upload_file" style={{fontSize:20}}/>Import Soal — Upload File .js</h2>
+          <button onClick={onClose} style={{ color:'#475569' }}><MI name="close" style={{fontSize:18}}/></button>
         </div>
         <div className="p-6 space-y-4">
           <div onDragOver={e=>{e.preventDefault();setIsDrag(true);}} onDragLeave={()=>setIsDrag(false)} onDrop={e=>{e.preventDefault();setIsDrag(false);handleFiles(e.dataTransfer.files);}} onClick={()=>inputRef.current?.click()}
             className="rounded-2xl flex flex-col items-center justify-center gap-3 py-10 cursor-pointer transition-all"
             style={{ border:`2px dashed ${isDrag?'#00E5FF':'#1E3A5F'}`, background:isDrag?'rgba(0,229,255,0.05)':'#0A1628' }}>
-            <div className="text-4xl">{isDrag?'📂':'📁'}</div>
+            <MI name={isDrag?'folder_open':'folder'} style={{ color:isDrag?'#00E5FF':'#334155', fontSize:44 }}/>
             <div className="text-center">
               <p className="text-sm font-bold" style={{ color:isDrag?'#00E5FF':'#CBD5E1' }}>{isDrag?'Lepas file di sini':'Drag & drop file .js di sini'}</p>
               <p className="text-xs mt-1" style={{ color:'#475569' }}>atau klik untuk pilih — bisa beberapa file sekaligus</p>
@@ -197,23 +192,26 @@ function ImportModal({ open, onClose, onImport, saving }) {
             <div className="space-y-2">
               {files.map(f=>(
                 <div key={f.name} className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background:f.err?'#F43F5E0A':'#00E5FF0A', border:`1px solid ${f.err?'#F43F5E33':'#00E5FF22'}` }}>
-                  <span className="text-xl">{f.err?'❌':'✅'}</span>
+                  <MI name={f.err?'cancel':'check_circle'} style={{ color:f.err?'#F43F5E':'#10B981', fontSize:22 }}/>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color:'#CBD5E1' }}>{f.name}</p>
                     {f.err?<p className="text-xs" style={{ color:'#F43F5E' }}>{f.err}</p>:<p className="text-xs" style={{ color:'#475569' }}>{f.preview.length} soal ditemukan</p>}
                   </div>
-                  <button onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))} className="text-xs px-2 py-1 rounded-lg" style={{ color:'#475569', background:'#1E3A5F33' }}>✕</button>
+                  <button onClick={()=>setFiles(p=>p.filter(x=>x.name!==f.name))} className="text-xs px-2 py-1 rounded-lg" style={{ color:'#475569', background:'#1E3A5F33' }}><MI name="close" style={{fontSize:14}}/></button>
                 </div>
               ))}
             </div>
           )}
-          {totalSoal>0 && <div className="px-4 py-3 rounded-xl" style={{ background:'rgba(0,229,255,0.06)', border:'1px solid #00E5FF22' }}><p className="text-sm font-bold" style={{ color:'#00E5FF' }}>🎯 Total: <strong>{totalSoal} soal</strong> dari {files.filter(f=>f.preview).length} file siap diimport</p></div>}
+          {totalSoal>0 && <div className="px-4 py-3 rounded-xl flex items-center gap-2" style={{ background:'rgba(0,229,255,0.06)', border:'1px solid #00E5FF22' }}>
+            <MI name="task_alt" style={{ color:'#00E5FF', fontSize:18 }}/>
+            <p className="text-sm font-bold" style={{ color:'#00E5FF' }}>Total: <strong>{totalSoal} soal</strong> dari {files.filter(f=>f.preview).length} file siap diimport</p>
+          </div>}
         </div>
         <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop:'1px solid #1E3A5F' }}>
           <button onClick={onClose} className="px-5 py-2 rounded-xl text-sm" style={{ color:'#64748B' }}>Batal</button>
-          <button onClick={doImport} disabled={saving||totalSoal===0} className="px-6 py-2 rounded-xl text-sm font-bold"
+          <button onClick={doImport} disabled={saving||totalSoal===0} className="px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2"
             style={{ background:totalSoal>0?'linear-gradient(135deg,#00E5FF,#0891B2)':'#1E3A5F', color:totalSoal>0?'#050B18':'#334155', opacity:saving?.6:1 }}>
-            {saving?'Mengimport...':totalSoal>0?`📥 Import ${totalSoal} Soal`:'Pilih file dulu'}
+            <MI name="download" style={{fontSize:16}}/>{saving?'Mengimport...':totalSoal>0?`Import ${totalSoal} Soal`:'Pilih file dulu'}
           </button>
         </div>
       </div>
@@ -221,9 +219,7 @@ function ImportModal({ open, onClose, onImport, saving }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  TAB: KELOLA SOAL
-// ─────────────────────────────────────────────────────────────
+// ─── TAB SOAL ───
 function TabSoal({ adminId, showToast }) {
   const [soalList, setSoalList] = useState([]);
   const [total, setTotal]       = useState(0);
@@ -255,7 +251,7 @@ function TabSoal({ adminId, showToast }) {
     const payload={ mapel:form.mapel, bab:form.bab, nama_bab:form.nama_bab, teks:form.teks, pilihan:form.pilihan, jawaban_benar:form.jawaban_benar, penjelasan:form.penjelasan, pembahasan:form.pembahasan, aktif:form.aktif, created_by:adminId };
     const { error } = form.id ? await supabase.from('soal').update(payload).eq('id',form.id) : await supabase.from('soal').insert(payload);
     setSaving(false);
-    if(error) showToast(error.message,'error'); else { showToast(form.id?'Soal diupdate! ✓':'Soal ditambahkan! ✓'); setModal(false); fetchSoal(); }
+    if(error) showToast(error.message,'error'); else { showToast(form.id?'Soal diupdate!':'Soal ditambahkan!'); setModal(false); fetchSoal(); }
   };
 
   const handleDelete = async(id)=>{ setSaving(true); const { error } = await supabase.from('soal').delete().eq('id',id); setSaving(false); setDel(null); if(error) showToast(error.message,'error'); else { showToast('Soal dihapus.'); fetchSoal(); } };
@@ -263,7 +259,7 @@ function TabSoal({ adminId, showToast }) {
   const handleImport = async(list)=>{
     setSaving(true);
     for(let i=0;i<list.length;i+=50){ const chunk=list.slice(i,i+50).map(s=>({...s,created_by:adminId})); await supabase.from('soal').insert(chunk); }
-    setSaving(false); setImport(false); showToast(`${list.length} soal berhasil diimport! 🎉`); fetchSoal();
+    setSaving(false); setImport(false); showToast(`${list.length} soal berhasil diimport!`); fetchSoal();
   };
 
   const totalPages = Math.ceil(total/PER_PAGE);
@@ -274,13 +270,16 @@ function TabSoal({ adminId, showToast }) {
         <div className="flex flex-wrap gap-2">
           <select value={filterMapel} onChange={e=>{setFM(e.target.value);setPage(1);}} className="px-3 py-2 rounded-xl text-sm outline-none" style={{ background:'#0D1929', border:'1px solid #1E3A5F', color:'#CBD5E1' }}>
             <option value="">Semua Mapel</option>
-            {MAPEL_LIST.map(m=><option key={m.value} value={m.value}>{m.icon} {m.label}</option>)}
+            {MAPEL_LIST.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="🔍 Cari soal..." className="px-3 py-2 rounded-xl text-sm outline-none min-w-[200px]" style={{ background:'#0D1929', border:'1px solid #1E3A5F', color:'#CBD5E1' }}/>
+          <div className="relative">
+            <MI name="search" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#475569', fontSize:16 }}/>
+            <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Cari soal..." className="pl-8 pr-3 py-2 rounded-xl text-sm outline-none min-w-[200px]" style={{ background:'#0D1929', border:'1px solid #1E3A5F', color:'#CBD5E1' }}/>
+          </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={()=>setImport(true)} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ background:'#A78BFA22', color:'#A78BFA', border:'1px solid #A78BFA44' }}>📥 Import .js</button>
-          <button onClick={()=>{setEdit(null);setModal(true);}} className="px-4 py-2 rounded-xl text-sm font-bold" style={{ background:'#00E5FF', color:'#050B18' }}>➕ Tambah Soal</button>
+          <button onClick={()=>setImport(true)} className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5" style={{ background:'#A78BFA22', color:'#A78BFA', border:'1px solid #A78BFA44' }}><MI name="upload_file" style={{fontSize:16}}/>Import .js</button>
+          <button onClick={()=>{setEdit(null);setModal(true);}} className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5" style={{ background:'#00E5FF', color:'#050B18' }}><MI name="add" style={{fontSize:16}}/>Tambah Soal</button>
         </div>
       </div>
       <p className="text-sm" style={{ color:'#475569' }}>Menampilkan {soalList.length} dari <strong style={{ color:'#CBD5E1' }}>{total}</strong> soal</p>
@@ -289,7 +288,7 @@ function TabSoal({ adminId, showToast }) {
         {loading ? (
           <div className="p-8 text-center" style={{ background:'#0D1929' }}><div className="w-8 h-8 rounded-full border-2 mx-auto animate-spin mb-2" style={{ borderColor:'#00E5FF', borderTopColor:'transparent' }}/><p style={{ color:'#475569' }}>Memuat...</p></div>
         ) : soalList.length===0 ? (
-          <div className="p-8 text-center" style={{ background:'#0D1929' }}><div className="text-4xl mb-2">📭</div><p style={{ color:'#475569' }}>Belum ada soal.</p></div>
+          <div className="p-8 text-center" style={{ background:'#0D1929' }}><MI name="inbox" style={{ color:'#334155', fontSize:40, display:'block', margin:'0 auto 8px' }}/><p style={{ color:'#475569' }}>Belum ada soal.</p></div>
         ) : (
           <table className="w-full text-sm">
             <thead><tr style={{ background:'#0A1628', borderBottom:'1px solid #1E3A5F' }}>{['ID','MAPEL · BAB','SOAL','STATUS','AKSI'].map(h=><th key={h} className="text-left px-4 py-3 text-xs font-bold" style={{ color:'#475569' }}>{h}</th>)}</tr></thead>
@@ -299,8 +298,11 @@ function TabSoal({ adminId, showToast }) {
                   <td className="px-4 py-3 font-mono text-xs" style={{ color:'#334155' }}>{s.id}</td>
                   <td className="px-4 py-3"><MapelBadge mapel={s.mapel}/><div className="text-xs mt-1" style={{ color:'#475569' }}>{s.bab} · {s.nama_bab?.slice(0,25)}</div></td>
                   <td className="px-4 py-3 max-w-xs"><p className="text-xs truncate" style={{ color:'#CBD5E1' }}>{s.teks?.replace(/\$/g,'')?.slice(0,80)}...</p><p className="text-xs mt-0.5 truncate" style={{ color:'#334155' }}>Jwb: {['A','B','C','D'][s.jawaban_benar]} · {s.pilihan?.[s.jawaban_benar]?.replace(/\$/g,'')?.slice(0,30)}</p></td>
-                  <td className="px-4 py-3"><button onClick={()=>toggleAktif(s)} className="text-xs px-2 py-1 rounded-full font-bold" style={{ background:s.aktif?'#10B98122':'#F43F5E22', color:s.aktif?'#10B981':'#F43F5E', border:`1px solid ${s.aktif?'#10B98144':'#F43F5E44'}` }}>{s.aktif?'✓ Aktif':'✕ Nonaktif'}</button></td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-1"><button onClick={()=>{setEdit({...s,pilihan:s.pilihan||['','','','']});setModal(true);}} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background:'#00E5FF22', color:'#00E5FF' }}>✏️ Edit</button><button onClick={()=>setDel(s.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background:'#F43F5E22', color:'#F43F5E' }}>🗑️</button></div></td>
+                  <td className="px-4 py-3"><button onClick={()=>toggleAktif(s)} className="text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1" style={{ background:s.aktif?'#10B98122':'#F43F5E22', color:s.aktif?'#10B981':'#F43F5E', border:`1px solid ${s.aktif?'#10B98144':'#F43F5E44'}` }}><MI name={s.aktif?'check':'close'} style={{fontSize:11}}/>{s.aktif?'Aktif':'Nonaktif'}</button></td>
+                  <td className="px-4 py-3"><div className="flex justify-end gap-1">
+                    <button onClick={()=>{setEdit({...s,pilihan:s.pilihan||['','','','']});setModal(true);}} className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1" style={{ background:'#00E5FF22', color:'#00E5FF' }}><MI name="edit" style={{fontSize:13}}/>Edit</button>
+                    <button onClick={()=>setDel(s.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1" style={{ background:'#F43F5E22', color:'#F43F5E' }}><MI name="delete" style={{fontSize:13}}/></button>
+                  </div></td>
                 </tr>
               ))}
             </tbody>
@@ -310,9 +312,9 @@ function TabSoal({ adminId, showToast }) {
 
       {totalPages>1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page<=1} onClick={()=>setPage(p=>p-1)} className="px-4 py-2 rounded-xl text-sm" style={{ background:'#0D1929', color:page<=1?'#1E3A5F':'#CBD5E1', border:'1px solid #1E3A5F' }}>← Prev</button>
+          <button disabled={page<=1} onClick={()=>setPage(p=>p-1)} className="px-4 py-2 rounded-xl text-sm flex items-center gap-1" style={{ background:'#0D1929', color:page<=1?'#1E3A5F':'#CBD5E1', border:'1px solid #1E3A5F' }}><MI name="arrow_back" style={{fontSize:14}}/>Prev</button>
           <span className="text-sm" style={{ color:'#475569' }}>Hal {page} / {totalPages}</span>
-          <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="px-4 py-2 rounded-xl text-sm" style={{ background:'#0D1929', color:page>=totalPages?'#1E3A5F':'#CBD5E1', border:'1px solid #1E3A5F' }}>Next →</button>
+          <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="px-4 py-2 rounded-xl text-sm flex items-center gap-1" style={{ background:'#0D1929', color:page>=totalPages?'#1E3A5F':'#CBD5E1', border:'1px solid #1E3A5F' }}>Next<MI name="arrow_forward" style={{fontSize:14}}/></button>
         </div>
       )}
 
@@ -323,9 +325,7 @@ function TabSoal({ adminId, showToast }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  TAB: STATISTIK
-// ─────────────────────────────────────────────────────────────
+// ─── TAB STATS ───
 function TabStats() {
   const [stats, setStats]       = useState([]);
   const [topUsers, setTopUsers] = useState([]);
@@ -344,11 +344,11 @@ function TabStats() {
         <div className="text-sm" style={{ color:'#475569' }}>Total soal di database</div>
       </div>
       <div>
-        <h3 className="text-sm font-bold mb-3" style={{ color:'#64748B' }}>SOAL PER MATA PELAJARAN</h3>
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color:'#64748B' }}><MI name="bar_chart" style={{fontSize:16}}/>SOAL PER MATA PELAJARAN</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {stats.map(s=>{ const m=getCfg(s.mapel); const pct=totalSoal>0?Math.round((Number(s.aktif)/totalSoal)*100):0; return (
             <div key={s.mapel} className="rounded-2xl p-4" style={{ background:'#0D1929', border:`1px solid ${m.color}33` }}>
-              <div className="flex items-center gap-2 mb-3"><span className="text-xl">{m.icon}</span><span className="font-bold text-sm" style={{ color:m.color }}>{m.label}</span></div>
+              <div className="flex items-center gap-2 mb-3"><MI name={m.icon} style={{ color:m.color, fontSize:20 }}/><span className="font-bold text-sm" style={{ color:m.color }}>{m.label}</span></div>
               <div className="text-3xl font-black mb-1" style={{ color:'#E2E8F0' }}>{s.total}</div>
               <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background:'#1E3A5F' }}><div className="h-full rounded-full" style={{ width:`${pct}%`, background:m.color }}/></div>
               <div className="text-xs" style={{ color:'#475569' }}><span style={{ color:'#10B981' }}>{s.aktif} aktif</span>{Number(s.nonaktif)>0&&<span style={{ color:'#F43F5E' }}> · {s.nonaktif} nonaktif</span>}</div>
@@ -358,7 +358,7 @@ function TabStats() {
       </div>
       {topUsers.length>0 && (
         <div>
-          <h3 className="text-sm font-bold mb-3" style={{ color:'#64748B' }}>🏆 LEADERBOARD TRYOUT</h3>
+          <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color:'#64748B' }}><MI name="emoji_events" style={{ color:'#F59E0B', fontSize:16 }}/>LEADERBOARD TRYOUT</h3>
           <div className="rounded-2xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
             {topUsers.map((u,i)=>(
               <div key={i} className="flex items-center gap-4 px-5 py-3" style={{ background:i%2===0?'#0D1929':'#0A1628', borderBottom:'1px solid #1E3A5F11' }}>
@@ -375,9 +375,7 @@ function TabStats() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  TAB: MANAJEMEN USER
-// ─────────────────────────────────────────────────────────────
+// ─── TAB USERS ───
 function TabUsers({ showToast }) {
   const [users, setUsers]       = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -391,20 +389,19 @@ function TabUsers({ showToast }) {
   useEffect(()=>{ fetchUsers(); },[]);
 
   const openEdit = (u)=>{ setEditUser(u); setNewName(u.display_name); setNewRole(u.role); };
-  const handleSave = async()=>{ setSaving(true); const {error}=await supabase.from('profiles').update({display_name:newName,role:newRole}).eq('id',editUser.id); setSaving(false); if(error) showToast(error.message,'error'); else { showToast('User diperbarui! ✓'); setEditUser(null); fetchUsers(); } };
+  const handleSave = async()=>{ setSaving(true); const {error}=await supabase.from('profiles').update({display_name:newName,role:newRole}).eq('id',editUser.id); setSaving(false); if(error) showToast(error.message,'error'); else { showToast('User diperbarui!'); setEditUser(null); fetchUsers(); } };
 
   const filtered = users.filter(u=>u.display_name?.toLowerCase().includes(search.toLowerCase())||u.username?.toLowerCase().includes(search.toLowerCase()));
   const RC = { admin:'#00E5FF', user:'#10B981' };
 
   return (
     <div className="space-y-4">
-      {/* Modal Edit */}
       {editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
           <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F' }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
-              <h2 className="font-bold" style={{ color:'#00E5FF' }}>✏️ Edit User</h2>
-              <button onClick={()=>setEditUser(null)} style={{ color:'#475569' }}>✕</button>
+              <h2 className="font-bold flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="edit" style={{fontSize:18}}/>Edit User</h2>
+              <button onClick={()=>setEditUser(null)} style={{ color:'#475569' }}><MI name="close" style={{fontSize:18}}/></button>
             </div>
             <div className="p-6 space-y-4">
               <div><label className="block text-xs font-bold mb-1" style={{ color:'#64748B' }}>USERNAME</label><p className="text-sm px-3 py-2 rounded-lg" style={{ background:'#0A1628', color:'#475569' }}>@{editUser.username}</p></div>
@@ -413,25 +410,28 @@ function TabUsers({ showToast }) {
                 <label className="block text-xs font-bold mb-2" style={{ color:'#64748B' }}>ROLE</label>
                 <div className="flex gap-2">
                   {['user','admin'].map(r=>(
-                    <button key={r} onClick={()=>setNewRole(r)} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                    <button key={r} onClick={()=>setNewRole(r)} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5"
                       style={{ background:newRole===r?RC[r]+'22':'#0A1628', color:newRole===r?RC[r]:'#475569', border:`1px solid ${newRole===r?RC[r]+'44':'#1E3A5F'}` }}>
-                      {r==='admin'?'👑 Admin':'👤 User'}
+                      <MI name={r==='admin'?'admin_panel_settings':'person'} style={{fontSize:16}}/>{r==='admin'?'Admin':'User'}
                     </button>
                   ))}
                 </div>
-                {newRole==='admin'&&<p className="text-xs mt-2" style={{ color:'#F59E0B' }}>⚠️ Admin dapat mengelola semua soal dan user.</p>}
+                {newRole==='admin'&&<p className="text-xs mt-2 flex items-center gap-1" style={{ color:'#F59E0B' }}><MI name="warning" style={{fontSize:12}}/>Admin dapat mengelola semua soal dan user.</p>}
               </div>
             </div>
             <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop:'1px solid #1E3A5F' }}>
               <button onClick={()=>setEditUser(null)} className="px-5 py-2 rounded-xl text-sm" style={{ color:'#64748B' }}>Batal</button>
-              <button onClick={handleSave} disabled={saving} className="px-6 py-2 rounded-xl text-sm font-bold" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:saving?.6:1 }}>{saving?'Menyimpan...':'💾 Simpan'}</button>
+              <button onClick={handleSave} disabled={saving} className="px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:saving?.6:1 }}><MI name="save" style={{fontSize:16}}/>{saving?'Menyimpan...':'Simpan'}</button>
             </div>
           </div>
         </div>
       )}
 
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Cari user..." className="px-3 py-2 rounded-xl text-sm outline-none min-w-[220px]" style={{ background:'#0D1929', border:'1px solid #1E3A5F', color:'#CBD5E1' }}/>
+        <div className="relative">
+          <MI name="search" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#475569', fontSize:16 }}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari user..." className="pl-8 pr-3 py-2 rounded-xl text-sm outline-none min-w-[220px]" style={{ background:'#0D1929', border:'1px solid #1E3A5F', color:'#CBD5E1' }}/>
+        </div>
         <p className="text-sm" style={{ color:'#475569' }}>{filtered.length} user terdaftar</p>
       </div>
 
@@ -446,9 +446,9 @@ function TabUsers({ showToast }) {
                 <tr key={u.id} style={{ background:i%2===0?'#0D1929':'#0A1628', borderBottom:'1px solid #1E3A5F11' }}>
                   <td className="px-4 py-3 font-mono text-xs" style={{ color:'#64748B' }}>@{u.username}</td>
                   <td className="px-4 py-3 text-sm font-medium" style={{ color:'#CBD5E1' }}>{u.display_name}</td>
-                  <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background:RC[u.role]+'22', color:RC[u.role], border:`1px solid ${RC[u.role]}44` }}>{u.role==='admin'?'👑 Admin':'👤 User'}</span></td>
+                  <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 w-fit" style={{ background:RC[u.role]+'22', color:RC[u.role], border:`1px solid ${RC[u.role]}44` }}><MI name={u.role==='admin'?'admin_panel_settings':'person'} style={{fontSize:11}}/>{u.role==='admin'?'Admin':'User'}</span></td>
                   <td className="px-4 py-3 text-xs" style={{ color:'#475569' }}>{new Date(u.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
-                  <td className="px-4 py-3"><button onClick={()=>openEdit(u)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background:'#00E5FF22', color:'#00E5FF' }}>✏️ Edit</button></td>
+                  <td className="px-4 py-3"><button onClick={()=>openEdit(u)} className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1" style={{ background:'#00E5FF22', color:'#00E5FF' }}><MI name="edit" style={{fontSize:13}}/>Edit</button></td>
                 </tr>
               ))}
             </tbody>
@@ -459,9 +459,7 @@ function TabUsers({ showToast }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  MAIN: ADMIN PANEL
-// ─────────────────────────────────────────────────────────────
+// ─── MAIN ADMIN PANEL ───
 export default function AdminPanel({ onBack }) {
   const [profile, setProfile]   = useState(null);
   const [authLoad, setAuthLoad] = useState(true);
@@ -491,7 +489,11 @@ export default function AdminPanel({ onBack }) {
     setLoginLoad(false); if(error) setLoginErr(error.message);
   };
 
-  const TABS = [{ key:'soal',label:'📋 Kelola Soal'},{ key:'stats',label:'📊 Statistik'},{ key:'users',label:'👥 User'}];
+  const TABS = [
+    { key:'soal',  label:'Kelola Soal', icon:'quiz'      },
+    { key:'stats', label:'Statistik',   icon:'bar_chart'  },
+    { key:'users', label:'User',        icon:'group'      },
+  ];
 
   if (authLoad) return <div className="min-h-screen flex items-center justify-center" style={{ background:'#050B18' }}><div className="w-12 h-12 rounded-full border-2 animate-spin" style={{ borderColor:'#00E5FF', borderTopColor:'transparent' }}/></div>;
 
@@ -513,9 +515,11 @@ export default function AdminPanel({ onBack }) {
           </div>
           {loginErr&&<p className="text-xs p-2 rounded-lg" style={{ background:'#F43F5E11', color:'#F43F5E' }}>{loginErr}</p>}
           {profile&&profile.role!=='admin'&&<p className="text-xs text-center" style={{ color:'#F43F5E' }}>Akun ini bukan admin.</p>}
-          <button onClick={handleLogin} disabled={loginLoad} className="w-full py-3 rounded-xl font-bold text-sm" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:loginLoad?.7:1 }}>{loginLoad?'Masuk...':'🔐 Masuk sebagai Admin'}</button>
+          <button onClick={handleLogin} disabled={loginLoad} className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18', opacity:loginLoad?.7:1 }}>
+            <MI name="lock" style={{fontSize:16}}/>{loginLoad?'Masuk...':'Masuk sebagai Admin'}
+          </button>
         </div>
-        {onBack&&<button onClick={onBack} className="w-full mt-4 py-2 text-sm" style={{ color:'#334155' }}>← Kembali ke ARLearn</button>}
+        {onBack&&<button onClick={onBack} className="w-full mt-4 py-2 text-sm flex items-center justify-center gap-1" style={{ color:'#334155' }}><MI name="arrow_back" style={{fontSize:14}}/>Kembali ke ARLearn</button>}
       </div>
     </div>
   );
@@ -525,18 +529,18 @@ export default function AdminPanel({ onBack }) {
       <Toast toast={toast}/>
       <nav className="sticky top-0 z-40 flex items-center justify-between px-6 py-3" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E3A5F' }}>
         <div className="flex items-center gap-3">
-          {onBack&&<button onClick={onBack} className="text-sm px-3 py-1.5 rounded-lg" style={{ background:'#1E3A5F33', color:'#64748B' }}>← App</button>}
+          {onBack&&<button onClick={onBack} className="text-sm px-3 py-1.5 rounded-lg flex items-center gap-1" style={{ background:'#1E3A5F33', color:'#64748B' }}><MI name="arrow_back" style={{fontSize:14}}/>App</button>}
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18' }}>AR</div>
           <span className="font-bold text-sm" style={{ color:'#E2E8F0' }}>ARLearn <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background:'#00E5FF22', color:'#00E5FF' }}>ADMIN</span></span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs hidden sm:block" style={{ color:'#475569' }}>{profile.display_name}</span>
-          <button onClick={()=>supabase.auth.signOut()} className="text-xs px-3 py-1.5 rounded-lg" style={{ background:'#F43F5E22', color:'#F43F5E', border:'1px solid #F43F5E33' }}>Keluar</button>
+          <button onClick={()=>supabase.auth.signOut()} className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1" style={{ background:'#F43F5E22', color:'#F43F5E', border:'1px solid #F43F5E33' }}><MI name="logout" style={{fontSize:14}}/>Keluar</button>
         </div>
       </nav>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-1 mb-6 p-1 rounded-xl w-fit" style={{ background:'#0D1929', border:'1px solid #1E3A5F' }}>
-          {TABS.map(t=><button key={t.key} onClick={()=>setTab(t.key)} className="px-4 py-2 rounded-lg text-sm font-medium transition-all" style={{ background:tab===t.key?'#00E5FF':'transparent', color:tab===t.key?'#050B18':'#475569' }}>{t.label}</button>)}
+          {TABS.map(t=><button key={t.key} onClick={()=>setTab(t.key)} className="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5" style={{ background:tab===t.key?'#00E5FF':'transparent', color:tab===t.key?'#050B18':'#475569' }}><MI name={t.icon} style={{fontSize:15}}/>{t.label}</button>)}
         </div>
         {tab==='soal'  && <TabSoal adminId={sessionId} showToast={showToast}/>}
         {tab==='stats' && <TabStats/>}
