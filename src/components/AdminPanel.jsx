@@ -141,7 +141,7 @@ function ImportModal({ open, onClose, onImport, saving }) {
 
   const parseText = (text) => {
     try {
-      const match = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/m);
+      const match = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
       if (!match) return { err:'Array soal tidak ditemukan.' };
       // eslint-disable-next-line no-eval
       const arr = eval(match[1]);
