@@ -188,6 +188,69 @@ function Latex({ text }) {
   );
 }
 
+// ─── PENJELASAN BOX (toggle singkat/lengkap) ───
+function PenjelasanBox({ penjelasan, pembahasan }) {
+  const [mode, setMode] = useState('singkat'); // 'singkat' | 'lengkap'
+  const hasPembahasan = pembahasan && pembahasan.trim();
+  return (
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden animate-fadeIn" style={{ border:'1px solid rgba(0,229,255,0.18)', background:'rgba(0,229,255,0.03)' }}>
+      {/* Header + Toggle */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+        <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color:'#00E5FF' }}>
+          <MI name="lightbulb" style={{ fontSize:14 }}/>PENJELASAN
+        </span>
+        {hasPembahasan && (
+          <div className="flex items-center gap-1 rounded-xl overflow-hidden" style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
+            {['singkat','lengkap'].map(m => (
+              <button key={m} onClick={()=>setMode(m)}
+                className="px-3 py-1 text-xs font-semibold transition-all"
+                style={{
+                  background: mode===m ? 'rgba(0,229,255,0.18)' : 'transparent',
+                  color: mode===m ? '#00E5FF' : '#475569',
+                  borderRadius: 10,
+                }}>
+                {m==='singkat' ? '⚡ Singkat' : '📖 Lengkap'}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Divider */}
+      <div style={{ height:1, background:'rgba(0,229,255,0.08)', marginBottom:10 }}/>
+      {/* Konten */}
+      <div className="px-4 pb-4">
+        {mode === 'singkat' ? (
+          <div className="text-sm leading-relaxed" style={{ color:'#94A3B8' }}>
+            <Latex text={penjelasan}/>
+          </div>
+        ) : (
+          <div className="text-sm space-y-1" style={{ color:'#94A3B8' }}>
+            {(pembahasan||'').split('\n').map((line, i) => {
+              const trimmed = line.trim();
+              if (!trimmed) return <div key={i} style={{ height:4 }}/>;
+              // Baris yang diawali $ atau berisi = di awal → blok rumus, rata tengah
+              const isFormula = trimmed.startsWith('$') || /^[=→≈≠±]/.test(trimmed);
+              return (
+                <div key={i}
+                  className={isFormula ? 'py-0.5' : ''}
+                  style={{
+                    display: 'block',
+                    textAlign: isFormula ? 'center' : 'left',
+                    paddingLeft: isFormula ? 0 : undefined,
+                    color: isFormula ? '#CBD5E1' : '#94A3B8',
+                    fontFamily: isFormula ? 'inherit' : undefined,
+                  }}>
+                  <Latex text={line}/>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── CUSTOM ALERT ───
 function Alert({ show, tipe='info', judul, pesan, onOk, onYes, onNo, okLabel='OK', yesLabel='Ya', noLabel='Batal' }) {
   useEffect(() => {
@@ -764,10 +827,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
           })}
         </div>
         {sudahDijawab&&soal.penjelasan&&(
-          <div className="mx-4 mb-4 rounded-xl p-3.5 animate-fadeIn" style={{ background:'rgba(0,229,255,0.04)',border:'1px solid rgba(0,229,255,0.15)' }}>
-            <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 mb-1" style={{ color:'#00E5FF' }}><MI name="lightbulb" style={{fontSize:13}}/>PENJELASAN</span>
-            <div className="text-sm leading-relaxed" style={{ color:'#94A3B8' }}><Latex text={soal.penjelasan}/></div>
-          </div>
+          <PenjelasanBox penjelasan={soal.penjelasan} pembahasan={soal.pembahasan}/>
         )}
       </div>
 
