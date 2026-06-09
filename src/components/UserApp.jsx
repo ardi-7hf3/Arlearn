@@ -209,7 +209,7 @@ function PenjelasanBox({ penjelasan, pembahasan }) {
                   color: mode===m ? '#00E5FF' : '#475569',
                   borderRadius: 10,
                 }}>
-                {m==='singkat' ? '⚡ Singkat' : '📖 Lengkap'}
+                {m==='singkat' ? 'Singkat' : 'Lengkap'}
               </button>
             ))}
           </div>
@@ -409,7 +409,7 @@ function LoginPage({ onLogin }) {
           <h1 className="font-black text-4xl logo-gradient mb-1.5" style={{ letterSpacing:'-1px' }}>ARLearn</h1>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background:'rgba(0,229,255,0.07)', border:'1px solid rgba(0,229,255,0.15)' }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background:'#10B981', boxShadow:'0 0 6px #10B981' }}/>
-            <span className="text-xs font-semibold" style={{ color:'#64748B' }}>Platform Tryout Premium · XI ARTERI</span>
+            <span className="text-xs font-semibold" style={{ color:'#64748B' }}>Platform Tryout · XI ARTERI</span>
           </div>
         </div>
 
@@ -477,7 +477,7 @@ function LoginPage({ onLogin }) {
             >
               {loading
                 ? <><div style={{ width:16, height:16, border:'2px solid rgba(0,229,255,0.4)', borderTopColor:'#00E5FF', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/><span>Sedang Masuk...</span></>
-                : <><MI name="rocket_launch" style={{ fontSize:18 }}/><span>Masuk ke ARLearn</span></>
+                : <><MI name="rocket_launch" style={{ fontSize:18 }}/><span>Masuk</span></>
               }
             </button>
 
@@ -486,7 +486,7 @@ function LoginPage({ onLogin }) {
           {/* Footer card */}
           <div className="px-7 pb-5 flex items-center justify-center gap-2">
             <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
-            <span className="text-xs px-3" style={{ color:'#1E3A5F' }}>XI ARTERI 2024/2025</span>
+            <span className="text-xs px-3" style={{ color:'#1E3A5F' }}>XI ARTERI 2026/2027</span>
             <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
           </div>
         </div>
