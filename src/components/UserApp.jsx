@@ -74,8 +74,51 @@ function formatTgl(iso) {
   return `${hari[d.getDay()]}, ${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}.${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-// ─── LATEX RENDERER ───
-function Latex({ text }) {
+// ─── MARKDOWN TABLE PARSER ───
+function isTableLine(line) {
+  return line.trim().startsWith('|') && line.trim().endsWith('|');
+}
+function isSeparatorLine(line) {
+  return /^\|[\s\-:|]+\|/.test(line.trim());
+}
+function parseTableCells(line) {
+  return line.trim().slice(1, -1).split('|').map(c => c.trim());
+}
+function MarkdownTable({ raw }) {
+  const lines = raw.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) return <span>{raw}</span>;
+  const headerCells = parseTableCells(lines[0]);
+  const bodyLines = lines.slice(2).filter(l => !isSeparatorLine(l));
+  return (
+    <div style={{ overflowX:'auto', margin:'8px 0' }}>
+      <table style={{ borderCollapse:'collapse', width:'100%', fontSize:'0.8rem' }}>
+        <thead>
+          <tr>
+            {headerCells.map((cell, i) => (
+              <th key={i} style={{ padding:'6px 12px', background:'rgba(0,229,255,0.12)', color:'#00E5FF', border:'1px solid rgba(0,229,255,0.2)', fontWeight:700, textAlign:'center', whiteSpace:'nowrap' }}>
+                <LatexInline text={cell}/>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyLines.map((line, ri) => (
+            <tr key={ri} style={{ background: ri%2===0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+              {parseTableCells(line).map((cell, ci) => (
+                <td key={ci} style={{ padding:'6px 12px', border:'1px solid rgba(255,255,255,0.07)', color:'#CBD5E1', textAlign:'center', whiteSpace:'nowrap' }}>
+                  <LatexInline text={cell}/>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── INLINE LATEX (tanpa table parsing) ───
+function LatexInline({ text }) {
   if (!text) return null;
   const parts = []; let rem = text; let k = 0;
   while (rem.length > 0) {
@@ -99,7 +142,50 @@ function Latex({ text }) {
     }
     parts.push(<span key={k++}>{rem}</span>); break;
   }
-  return <span className="latex-text">{parts}</span>;
+  return <span>{parts}</span>;
+}
+
+// ─── LATEX RENDERER (with table + newline support) ───
+function Latex({ text }) {
+  if (!text) return null;
+
+  // Split teks per baris, detect blok tabel markdown
+  const lines = text.split('\n');
+  const blocks = [];
+  let tableAccum = [];
+  let k = 0;
+
+  const flushTable = () => {
+    if (tableAccum.length >= 2) {
+      blocks.push({ type: 'table', raw: tableAccum.join('\n'), key: k++ });
+    } else if (tableAccum.length > 0) {
+      tableAccum.forEach(l => blocks.push({ type: 'text', raw: l + '\n', key: k++ }));
+    }
+    tableAccum = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isTableLine(line)) {
+      tableAccum.push(line);
+    } else {
+      if (tableAccum.length > 0) flushTable();
+      blocks.push({ type: 'text', raw: line + (i < lines.length - 1 ? '\n' : ''), key: k++ });
+    }
+  }
+  if (tableAccum.length > 0) flushTable();
+
+  return (
+    <span className="latex-text">
+      {blocks.map(block => {
+        if (block.type === 'table') return <MarkdownTable key={block.key} raw={block.raw} />;
+        // render teks biasa dengan newline & inline latex
+        const seg = block.raw;
+        if (!seg.trim()) return <br key={block.key} />;
+        return <span key={block.key} style={{ display:'inline' }}><LatexInline text={seg.replace(/\n$/, '')} />{seg.endsWith('\n') && <br />}</span>;
+      })}
+    </span>
+  );
 }
 
 // ─── CUSTOM ALERT ───
@@ -204,11 +290,13 @@ function Navbar({ page, setPage, userName, isAdmin, onLogout }) {
 
 // ─── LOGIN PAGE ───
 function LoginPage({ onLogin }) {
-  const [email, setEmail]       = useState('');
-  const [pass, setPass]         = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [alert, setAlert]       = useState({ show:false });
+  const [email, setEmail]         = useState('');
+  const [pass, setPass]           = useState('');
+  const [showPass, setShowPass]   = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [focusEmail, setFocusEmail] = useState(false);
+  const [focusPass, setFocusPass]   = useState(false);
+  const [alert, setAlert]         = useState({ show:false });
 
   const handleLogin = async () => {
     if (!email.trim() || !pass.trim()) { setAlert({ show:true, tipe:'warning', judul:'Form Kosong', pesan:'Isi email dan password terlebih dahulu.' }); return; }
@@ -222,43 +310,124 @@ function LoginPage({ onLogin }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background:'#050B18' }}>
+
+      {/* ── Background layers ── */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full opacity-[0.06]" style={{ background:'radial-gradient(circle,#00E5FF,transparent 70%)' }}/>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-[0.04]" style={{ background:'radial-gradient(circle,#06B6D4,transparent 70%)' }}/>
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage:'linear-gradient(rgba(0,229,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,1) 1px,transparent 1px)',backgroundSize:'60px 60px' }}/>
+        {/* grid */}
+        <div className="absolute inset-0" style={{ backgroundImage:'linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px)', backgroundSize:'48px 48px' }}/>
+        {/* glows */}
+        <div className="absolute" style={{ top:'-15%', left:'-10%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,229,255,0.12),transparent 65%)', filter:'blur(40px)' }}/>
+        <div className="absolute" style={{ bottom:'-15%', right:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle,rgba(99,102,241,0.1),transparent 65%)', filter:'blur(40px)' }}/>
+        <div className="absolute" style={{ top:'40%', right:'15%', width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(249,115,22,0.07),transparent 65%)', filter:'blur(30px)' }}/>
+        {/* floating dots */}
+        {[
+          { top:'12%', left:'8%',  size:4,  op:0.35, dur:'6s'  },
+          { top:'22%', left:'88%', size:3,  op:0.25, dur:'8s'  },
+          { top:'65%', left:'5%',  size:5,  op:0.2,  dur:'7s'  },
+          { top:'75%', left:'90%', size:3,  op:0.3,  dur:'9s'  },
+          { top:'45%', left:'92%', size:2,  op:0.2,  dur:'5s'  },
+          { top:'88%', left:'20%', size:4,  op:0.25, dur:'10s' },
+        ].map((d,i)=>(
+          <div key={i} className="absolute rounded-full login-float" style={{ top:d.top, left:d.left, width:d.size, height:d.size, background:`rgba(0,229,255,${d.op})`, animationDuration:d.dur }}/>
+        ))}
       </div>
-      <div className="w-full max-w-[440px] animate-fadeIn">
+
+      {/* ── Card ── */}
+      <div className="w-full max-w-[400px] animate-fadeIn" style={{ position:'relative', zIndex:1 }}>
+
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)',boxShadow:'0 0 30px rgba(0,229,255,0.3)' }}>
-            <span className="font-black text-2xl" style={{ color:'#050B18' }}>AR</span>
-          </div>
-          <h1 className="font-black text-3xl logo-gradient mb-1">ARLearn</h1>
-          <p className="text-sm" style={{ color:'#475569' }}>Platform Tryout Premium · XI ARTERI</p>
-        </div>
-        <div className="rounded-2xl p-6 space-y-4" style={{ background:'#0D1929',border:'1px solid #1E3A5F' }}>
-          <div>
-            <label className="block text-xs font-bold mb-1.5" style={{ color:'#475569' }}>EMAIL</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-              placeholder="email@arlearn.id" className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-              style={{ background:'#0A1628',border:'1px solid #1E3A5F',color:'#CBD5E1' }}/>
-          </div>
-          <div>
-            <label className="block text-xs font-bold mb-1.5" style={{ color:'#475569' }}>PASSWORD</label>
-            <div className="relative">
-              <input type={showPass?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-                placeholder="••••••••" className="w-full px-4 py-3 rounded-xl text-sm outline-none pr-12"
-                style={{ background:'#0A1628',border:'1px solid #1E3A5F',color:'#CBD5E1' }}/>
-              <button onClick={()=>setShowPass(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color:'#334155' }}>
-                <MI name={showPass?'visibility_off':'visibility'} style={{fontSize:20}}/>
-              </button>
+          <div className="relative inline-block mb-5">
+            <div className="absolute inset-0 rounded-3xl" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', filter:'blur(18px)', opacity:0.45, transform:'scale(1.1)' }}/>
+            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl" style={{ background:'linear-gradient(145deg,#00E5FF,#0284C7)', boxShadow:'0 8px 32px rgba(0,229,255,0.35), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
+              <span className="font-black text-3xl" style={{ color:'#050B18', letterSpacing:'-1px' }}>AR</span>
             </div>
           </div>
-          <button onClick={handleLogin} disabled={loading}
-            className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-            style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)',color:'#050B18',opacity:loading?.7:1 }}>
-            {loading ? <><MI name="hourglass_empty" style={{fontSize:16}}/>Masuk...</> : <><MI name="rocket_launch" style={{fontSize:16}}/>Masuk ke ARLearn</>}
-          </button>
+          <h1 className="font-black text-4xl logo-gradient mb-1.5" style={{ letterSpacing:'-1px' }}>ARLearn</h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background:'rgba(0,229,255,0.07)', border:'1px solid rgba(0,229,255,0.15)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background:'#10B981', boxShadow:'0 0 6px #10B981' }}/>
+            <span className="text-xs font-semibold" style={{ color:'#64748B' }}>Platform Tryout Premium · XI ARTERI</span>
+          </div>
         </div>
+
+        {/* Form card */}
+        <div className="rounded-3xl overflow-hidden" style={{ background:'linear-gradient(160deg,#0D1929,#0A1222)', border:'1px solid rgba(0,229,255,0.12)', boxShadow:'0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(0,229,255,0.08)' }}>
+
+          {/* Top accent bar */}
+          <div style={{ height:2, background:'linear-gradient(90deg,transparent,#00E5FF,#38BDF8,transparent)' }}/>
+
+          <div className="p-7 space-y-5">
+
+            {/* Email field */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: focusEmail ? '#00E5FF' : '#475569', transition:'color 0.2s' }}>
+                <MI name="alternate_email" style={{ fontSize:13 }}/>EMAIL
+              </label>
+              <div className="relative">
+                <input
+                  type="email" value={email}
+                  onChange={e=>setEmail(e.target.value)}
+                  onFocus={()=>setFocusEmail(true)}
+                  onBlur={()=>setFocusEmail(false)}
+                  onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+                  placeholder="email@arlearn.id"
+                  className="w-full rounded-2xl text-sm outline-none transition-all"
+                  style={{ padding:'13px 16px 13px 44px', background:'rgba(10,22,40,0.8)', border:`1.5px solid ${focusEmail?'rgba(0,229,255,0.5)':'rgba(30,58,95,0.8)'}`, color:'#E2E8F0', boxShadow: focusEmail?'0 0 16px rgba(0,229,255,0.1)':'none' }}
+                />
+                <MI name="alternate_email" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:18, color: focusEmail?'#00E5FF':'#334155', transition:'color 0.2s', pointerEvents:'none' }}/>
+              </div>
+            </div>
+
+            {/* Password field */}
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: focusPass ? '#00E5FF' : '#475569', transition:'color 0.2s' }}>
+                <MI name="lock" style={{ fontSize:13 }}/>PASSWORD
+              </label>
+              <div className="relative">
+                <input
+                  type={showPass?'text':'password'} value={pass}
+                  onChange={e=>setPass(e.target.value)}
+                  onFocus={()=>setFocusPass(true)}
+                  onBlur={()=>setFocusPass(false)}
+                  onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+                  placeholder="••••••••"
+                  className="w-full rounded-2xl text-sm outline-none transition-all"
+                  style={{ padding:'13px 50px 13px 44px', background:'rgba(10,22,40,0.8)', border:`1.5px solid ${focusPass?'rgba(0,229,255,0.5)':'rgba(30,58,95,0.8)'}`, color:'#E2E8F0', boxShadow: focusPass?'0 0 16px rgba(0,229,255,0.1)':'none' }}
+                />
+                {/* lock icon kiri */}
+                <MI name="lock" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:18, color: focusPass?'#00E5FF':'#334155', transition:'color 0.2s', pointerEvents:'none' }}/>
+                {/* toggle icon kanan — fix posisi tengah */}
+                <button
+                  onClick={()=>setShowPass(s=>!s)}
+                  style={{ position:'absolute', right:0, top:0, bottom:0, width:48, display:'flex', alignItems:'center', justifyContent:'center', color: showPass?'#00E5FF':'#475569', transition:'color 0.2s', background:'transparent', border:'none', cursor:'pointer' }}
+                >
+                  <MI name={showPass?'visibility':'visibility_off'} style={{ fontSize:20, display:'block' }}/>
+                </button>
+              </div>
+            </div>
+
+            {/* Login button */}
+            <button
+              onClick={handleLogin} disabled={loading}
+              className="w-full rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all"
+              style={{ padding:'14px', background: loading ? 'rgba(0,229,255,0.15)' : 'linear-gradient(135deg,#00E5FF,#0284C7)', color: loading ? '#00E5FF' : '#050B18', boxShadow: loading ? 'none' : '0 0 28px rgba(0,229,255,0.3), 0 4px 16px rgba(0,0,0,0.4)', transform: loading ? 'none' : 'translateY(0)', opacity: loading ? 0.8 : 1, border: loading ? '1.5px solid rgba(0,229,255,0.3)' : 'none' }}
+            >
+              {loading
+                ? <><div style={{ width:16, height:16, border:'2px solid rgba(0,229,255,0.4)', borderTopColor:'#00E5FF', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/><span>Sedang Masuk...</span></>
+                : <><MI name="rocket_launch" style={{ fontSize:18 }}/><span>Masuk ke ARLearn</span></>
+              }
+            </button>
+
+          </div>
+
+          {/* Footer card */}
+          <div className="px-7 pb-5 flex items-center justify-center gap-2">
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
+            <span className="text-xs px-3" style={{ color:'#1E3A5F' }}>XI ARTERI 2024/2025</span>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
+          </div>
+        </div>
+
       </div>
       <Alert {...alert} onOk={()=>setAlert({show:false})}/>
     </div>
