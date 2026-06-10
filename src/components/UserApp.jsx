@@ -189,6 +189,116 @@ function Latex({ text }) {
 }
 
 // ─── PENJELASAN BOX (toggle singkat/lengkap) ───
+// ─── PEMBAHASAN STEP PARSER ───
+// Format khusus di field pembahasan:
+//   [RUMUS] ...     → kotak rumus dasar berwarna kuning
+//   [LANGKAH] ...   → label step bernomor
+//   [INSTRUKSI] ... → badge instruksi (misal: substitusikan, kalikan, dll)
+//   [HASIL] ...     → baris hasil akhir highlight hijau
+//   baris $...      → formula LaTeX, rata tengah
+//   baris lainnya   → teks penjelasan biasa
+function ParsedPembahasan({ text }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  let stepCounter = 0;
+  const INSTRUKSI_KATA = [
+    'substitusikan','kalikan','bagikan','jumlahkan','kurangkan','hitung','tentukan',
+    'ubah','gunakan','masukkan','bandingkan','sederhanakan','bagi','kali','tambah',
+    'kurang','cari','konversikan','tulis','perhatikan','ingat','catatan'
+  ];
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+      {lines.map((raw, i) => {
+        const line = raw.trim();
+        if (!line) return <div key={i} style={{ height:4 }}/>;
+
+        // [RUMUS] tag → kotak rumus dasar
+        if (line.startsWith('[RUMUS]')) {
+          const content = line.replace('[RUMUS]','').trim();
+          return (
+            <div key={i} style={{ background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:10, padding:'8px 12px', margin:'4px 0' }}>
+              <div style={{ fontSize:'0.65rem', fontWeight:800, color:'#F59E0B', letterSpacing:'0.08em', marginBottom:4, display:'flex', alignItems:'center', gap:4 }}>
+                <span className="material-icons" style={{ fontSize:12 }}>functions</span>RUMUS DASAR
+              </div>
+              <div style={{ textAlign:'center', color:'#FDE68A' }}><Latex text={content}/></div>
+            </div>
+          );
+        }
+
+        // [LANGKAH] tag → step bernomor
+        if (line.startsWith('[LANGKAH]')) {
+          stepCounter++;
+          const content = line.replace('[LANGKAH]','').trim();
+          return (
+            <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, margin:'2px 0' }}>
+              <div style={{ minWidth:22, height:22, borderRadius:'50%', background:'linear-gradient(135deg,#F97316,#FB923C)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', fontWeight:800, color:'#fff', flexShrink:0, marginTop:1 }}>{stepCounter}</div>
+              <div style={{ fontSize:'0.8rem', color:'#CBD5E1', lineHeight:1.6, flex:1 }}><Latex text={content}/></div>
+            </div>
+          );
+        }
+
+        // [INSTRUKSI] tag → badge instruksi
+        if (line.startsWith('[INSTRUKSI]')) {
+          const content = line.replace('[INSTRUKSI]','').trim();
+          return (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:6, margin:'2px 0' }}>
+              <span style={{ background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', color:'#A78BFA', borderRadius:6, padding:'1px 8px', fontSize:'0.65rem', fontWeight:700, whiteSpace:'nowrap', flexShrink:0 }}>
+                ▶ {content.split(' ')[0].toUpperCase()}
+              </span>
+              <div style={{ fontSize:'0.8rem', color:'#94A3B8', flex:1 }}><Latex text={content}/></div>
+            </div>
+          );
+        }
+
+        // [HASIL] tag → highlight hijau hasil akhir
+        if (line.startsWith('[HASIL]')) {
+          const content = line.replace('[HASIL]','').trim();
+          return (
+            <div key={i} style={{ background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:10, padding:'8px 14px', margin:'4px 0', textAlign:'center' }}>
+              <div style={{ fontSize:'0.65rem', fontWeight:800, color:'#10B981', letterSpacing:'0.08em', marginBottom:3, display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                <span className="material-icons" style={{ fontSize:12 }}>check_circle</span>HASIL AKHIR
+              </div>
+              <div style={{ color:'#6EE7B7', fontWeight:700 }}><Latex text={content}/></div>
+            </div>
+          );
+        }
+
+        // Deteksi instruksi otomatis dari kata kunci (tanpa tag)
+        const lowerLine = line.toLowerCase();
+        const isAutoInstruksi = INSTRUKSI_KATA.some(k => lowerLine.startsWith(k));
+        if (isAutoInstruksi && !line.startsWith('$')) {
+          return (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:6, margin:'1px 0' }}>
+              <span style={{ background:'rgba(99,102,241,0.1)', border:'1px solid rgba(99,102,241,0.2)', color:'#818CF8', borderRadius:6, padding:'1px 7px', fontSize:'0.6rem', fontWeight:700, whiteSpace:'nowrap', flexShrink:0 }}>
+                ↳
+              </span>
+              <div style={{ fontSize:'0.8rem', color:'#94A3B8' }}><Latex text={line}/></div>
+            </div>
+          );
+        }
+
+        // Formula LaTeX (diawali $) → rata tengah, warna terang
+        const isFormula = line.startsWith('$') || /^[=→≈≠±∴∵]/.test(line);
+        if (isFormula) {
+          return (
+            <div key={i} style={{ textAlign:'center', color:'#CBD5E1', padding:'1px 0' }}>
+              <Latex text={line}/>
+            </div>
+          );
+        }
+
+        // Teks biasa
+        return (
+          <div key={i} style={{ fontSize:'0.8rem', color:'#94A3B8', lineHeight:1.6 }}>
+            <Latex text={line}/>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function PenjelasanBox({ penjelasan, pembahasan }) {
   const [mode, setMode] = useState('singkat'); // 'singkat' | 'lengkap'
   const hasPembahasan = pembahasan && pembahasan.trim();
@@ -224,27 +334,7 @@ function PenjelasanBox({ penjelasan, pembahasan }) {
             <Latex text={penjelasan}/>
           </div>
         ) : (
-          <div className="text-sm space-y-1" style={{ color:'#94A3B8' }}>
-            {(pembahasan||'').split('\n').map((line, i) => {
-              const trimmed = line.trim();
-              if (!trimmed) return <div key={i} style={{ height:4 }}/>;
-              // Baris yang diawali $ atau berisi = di awal → blok rumus, rata tengah
-              const isFormula = trimmed.startsWith('$') || /^[=→≈≠±]/.test(trimmed);
-              return (
-                <div key={i}
-                  className={isFormula ? 'py-0.5' : ''}
-                  style={{
-                    display: 'block',
-                    textAlign: isFormula ? 'center' : 'left',
-                    paddingLeft: isFormula ? 0 : undefined,
-                    color: isFormula ? '#CBD5E1' : '#94A3B8',
-                    fontFamily: isFormula ? 'inherit' : undefined,
-                  }}>
-                  <Latex text={line}/>
-                </div>
-              );
-            })}
-          </div>
+          <ParsedPembahasan text={pembahasan}/>
         )}
       </div>
     </div>
