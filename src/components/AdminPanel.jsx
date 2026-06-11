@@ -13,7 +13,7 @@ const MAPEL_LIST = [
   { value:'pjok',      label:'PJOK',         icon:'fitness_center',color:'#F43F5E' },
   { value:'default',   label:'Umum/Default', icon:'menu_book',     color:'#94A3B8' },
 ];
-const BLANK = { mapel:'kimia', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', aktif:true };
+const BLANK = { mapel:'kimia', kelas:'XI', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', aktif:true };
 const getCfg = (v) => MAPEL_LIST.find(x=>x.value===v) || MAPEL_LIST[5];
 const PER_PAGE = 20;
 
@@ -31,7 +31,7 @@ function Toast({ toast }) {
 function Confirm({ open, title, msg, onYes, onNo, loading }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)' }}>
       <div className="rounded-2xl p-6 text-center max-w-sm w-full" style={{ background:'#0D1929', border:'1px solid #F43F5E44' }}>
         <MI name="warning" style={{ color:'#F59E0B', fontSize:40, display:'block', margin:'0 auto 12px' }}/>
         <h3 className="font-bold text-lg mb-2" style={{ color:'#E2E8F0' }}>{title}</h3>
@@ -78,7 +78,7 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
   const setPilihan = (i,v) => { const p=[...form.pilihan]; p[i]=v; set('pilihan',p); };
   if (!open) return null;
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ background:'linear-gradient(135deg,#00E5FF08,#0D1929)', borderBottom:'1px solid #1E3A5F' }}>
           <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}>
@@ -87,11 +87,17 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ color:'#475569', background:'#1E3A5F33' }}><MI name="close" style={{fontSize:16}}/></button>
         </div>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold mb-1" style={{ color:'#64748B' }}>MATA PELAJARAN</label>
               <select value={form.mapel} onChange={e=>set('mapel',e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background:'#0A1628', border:'1px solid #1E3A5F', color:'#CBD5E1' }}>
                 {MAPEL_LIST.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1" style={{ color:'#64748B' }}>KELAS</label>
+              <select value={form.kelas||'XI'} onChange={e=>set('kelas',e.target.value)} className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background:'#0A1628', border:'1px solid #1E3A5F', color:'#CBD5E1' }}>
+                {['X','XI','XII'].map(k=><option key={k} value={k}>Kelas {k}</option>)}
               </select>
             </div>
             <FInput label="BAB (contoh: bab1)" value={form.bab} onChange={v=>set('bab',v)} placeholder="bab1"/>
@@ -113,7 +119,44 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
             </div>
           </div>
           <FInput label="PENJELASAN SINGKAT" value={form.penjelasan} onChange={v=>set('penjelasan',v)} placeholder="Penjelasan singkat jawaban benar..."/>
-          <FTextarea label="PEMBAHASAN LENGKAP (opsional)" value={form.pembahasan} onChange={v=>set('pembahasan',v)} placeholder="Step-by-step pembahasan..." rows={3}/>
+          {/* ─ PEMBAHASAN LENGKAP dengan panduan tag ─ */}
+          <div>
+            <label className="block text-xs font-bold mb-1" style={{ color:'#64748B' }}>PEMBAHASAN LENGKAP (opsional)</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {[
+                { tag:'[RUMUS]', color:'#F59E0B', desc:'Rumus dasar' },
+                { tag:'[LANGKAH]', color:'#F97316', desc:'Langkah bernomor' },
+                { tag:'[INSTRUKSI]', color:'#A78BFA', desc:'Instruksi' },
+                { tag:'[HASIL]', color:'#10B981', desc:'Hasil akhir' },
+              ].map(t => (
+                <button key={t.tag} type="button" title={t.desc}
+                  onClick={() => set('pembahasan', (form.pembahasan||'')+'\n'+t.tag+' ')}
+                  className="text-xs px-2 py-1 rounded-lg font-mono"
+                  style={{ background:t.color+'22', color:t.color, border:`1px solid ${t.color}44` }}>
+                  {t.tag}
+                </button>
+              ))}
+              <span className="text-xs self-center ml-1" style={{ color:'#334155' }}>← klik sisipkan tag</span>
+            </div>
+            <textarea rows={7} value={form.pembahasan} onChange={e=>set('pembahasan',e.target.value)}
+              placeholder={"[RUMUS] $\\text{pH} = -\\log[\\text{H}^+]$\n[LANGKAH] Tuliskan reaksi ionisasi...\n[INSTRUKSI] Substitusikan nilai\n$[\\text{H}^+] = 10^{-2}$ M\n[HASIL] $\\text{pH} = 2$"}
+              className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y font-mono"
+              style={{ background:'#0A1628', border:'1px solid #1E3A5F', color:'#CBD5E1', lineHeight:1.7 }}/>
+            {form.pembahasan?.trim() && (
+              <div className="mt-2 rounded-lg p-3" style={{ background:'rgba(0,229,255,0.03)', border:'1px solid rgba(0,229,255,0.1)' }}>
+                <p className="text-xs font-bold mb-1.5 flex items-center gap-1" style={{ color:'#00E5FF' }}><MI name="preview" style={{fontSize:12}}/>Preview</p>
+                {form.pembahasan.split('\n').map((line, i) => {
+                  const t = line.trim();
+                  if (!t) return <div key={i} style={{ height:3 }}/>;
+                  if (t.startsWith('[RUMUS]'))     return <div key={i} className="text-xs mb-1 px-2 py-1 rounded" style={{ background:'rgba(245,158,11,0.1)', color:'#F59E0B', borderLeft:'2px solid #F59E0B' }}><b>RUMUS</b> {t.replace('[RUMUS]','').trim()}</div>;
+                  if (t.startsWith('[LANGKAH]'))   return <div key={i} className="text-xs mb-1 px-2 py-1 rounded" style={{ background:'rgba(249,115,22,0.08)', color:'#FB923C', borderLeft:'2px solid #F97316' }}><b>LANGKAH</b> {t.replace('[LANGKAH]','').trim()}</div>;
+                  if (t.startsWith('[INSTRUKSI]')) return <div key={i} className="text-xs mb-1 px-2 py-1 rounded" style={{ background:'rgba(167,139,250,0.08)', color:'#A78BFA', borderLeft:'2px solid #A78BFA' }}><b>↳</b> {t.replace('[INSTRUKSI]','').trim()}</div>;
+                  if (t.startsWith('[HASIL]'))     return <div key={i} className="text-xs mb-1 px-2 py-1 rounded font-bold" style={{ background:'rgba(16,185,129,0.1)', color:'#10B981', borderLeft:'2px solid #10B981' }}><b>✓ HASIL</b> {t.replace('[HASIL]','').trim()}</div>;
+                  return <div key={i} className="text-xs mb-0.5" style={{ color:'#64748B' }}>{line}</div>;
+                })}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <button onClick={()=>set('aktif',!form.aktif)} className="relative w-11 h-6 rounded-full transition-all flex-shrink-0" style={{ background:form.aktif?'#00E5FF':'#1E3A5F' }}>
               <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white" style={{ left:form.aktif?'22px':'2px', transition:'left .2s' }}/>
@@ -165,12 +208,12 @@ function ImportModal({ open, onClose, onImport, saving }) {
   const totalSoal = files.reduce((a,f)=>a+(f.preview?.length||0),0);
   const doImport = () => {
     const all = files.flatMap(f=>f.preview||[]);
-    onImport(all.map(s=>({ mapel:s.mapel||'default', bab:s.bab||'bab1', nama_bab:s.namaBab||s.nama_bab||'', teks:s.teks||'', pilihan:Array.isArray(s.pilihan)?s.pilihan:[], jawaban_benar:s.jawabanBenar??s.jawaban_benar??0, penjelasan:s.penjelasan||'', pembahasan:s.pembahasan||'', aktif:true })));
+    onImport(all.map(s=>({ mapel:s.mapel||'default', kelas:s.kelas||'XI', bab:s.bab||'bab1', nama_bab:s.namaBab||s.nama_bab||'', teks:s.teks||'', pilihan:Array.isArray(s.pilihan)?s.pilihan:[], jawaban_benar:s.jawabanBenar??s.jawaban_benar??0, penjelasan:s.penjelasan||'', pembahasan:s.pembahasan||'', aktif:true })));
   };
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.94)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.94)', backdropFilter:'blur(8px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
           <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="upload_file" style={{fontSize:20}}/>Import Soal — Upload File .js</h2>
@@ -220,7 +263,7 @@ function ImportModal({ open, onClose, onImport, saving }) {
 }
 
 // ─── MODAL DETAIL BAB (soal per bab dalam 1 mapel) ───
-function DetailPaketModal({ open, onClose, mapel, onDeleteSoal, showToast }) {
+function DetailPaketModal({ open, onClose, mapel, kelas, onDeleteSoal, showToast }) {
   const [soalList, setSoalList] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [delId, setDelId]       = useState(null);
@@ -231,15 +274,17 @@ function DetailPaketModal({ open, onClose, mapel, onDeleteSoal, showToast }) {
   const fetchSoal = useCallback(async()=>{
     if(!mapel) return;
     setLoading(true);
-    const { data, error } = await supabase.from('soal')
+    let q = supabase.from('soal')
       .select('id,bab,nama_bab,teks,jawaban_benar,aktif')
       .eq('mapel', mapel)
       .order('bab', {ascending:true})
       .order('id',  {ascending:true});
+    if(kelas) q = q.eq('kelas', kelas);
+    const { data, error } = await q;
     if(error) showToast(error.message,'error');
     else setSoalList(data||[]);
     setLoading(false);
-  },[mapel]);
+  },[mapel, kelas]);
 
   useEffect(()=>{ if(open) { setPage(1); fetchSoal(); } },[open, fetchSoal]);
 
@@ -270,7 +315,7 @@ function DetailPaketModal({ open, onClose, mapel, onDeleteSoal, showToast }) {
 
   if(!open) return null;
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(8px)' }}>
       <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col" style={{ background:'#0D1929', border:`1px solid ${cfg.color}33`, maxHeight:'90vh' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom:'1px solid #1E3A5F', background:`linear-gradient(135deg,${cfg.color}0A,#0D1929)` }}>
@@ -280,7 +325,7 @@ function DetailPaketModal({ open, onClose, mapel, onDeleteSoal, showToast }) {
             </div>
             <div>
               <h2 className="font-bold text-base" style={{ color:cfg.color }}>{cfg.label}</h2>
-              <p className="text-xs" style={{ color:'#475569' }}>{soalList.length} soal · {groups.length} bab</p>
+              <p className="text-xs" style={{ color:'#475569' }}>{soalList.length} soal · {groups.length} bab {kelas?`· Kelas ${kelas}`:''}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ color:'#475569', background:'#1E3A5F33' }}><MI name="close" style={{fontSize:16}}/></button>
@@ -355,28 +400,31 @@ function TabSoal({ adminId, showToast }) {
   const [saving, setSaving]           = useState(false);
   const [importOpen, setImport]       = useState(false);
   const [delMapel, setDelMapel]       = useState(null); // mapel yang akan dihapus semua soalnya
-  const [detailMapel, setDetailMapel] = useState(null); // mapel yang dibuka detailnya
+  const [detailPaket, setDetailPaket] = useState(null); // {mapel, kelas} yang dibuka detailnya
 
   const fetchPaket = useCallback(async()=>{
     setLoading(true);
     // Ambil semua soal, group by mapel di client (supabase free tidak punya group by RPC built-in)
-    const { data, error } = await supabase.from('soal').select('id,mapel,bab,aktif');
+    const { data, error } = await supabase.from('soal').select('id,mapel,kelas,bab,aktif');
     if(error){ showToast(error.message,'error'); setLoading(false); return; }
 
-    // Group by mapel
+    // Group by mapel + kelas (agar kelas 11 dan 12 tidak campur)
     const map = {};
     (data||[]).forEach(s=>{
-      if(!map[s.mapel]) map[s.mapel]={ mapel:s.mapel, total:0, aktif:0, babs:new Set() };
-      map[s.mapel].total++;
-      if(s.aktif) map[s.mapel].aktif++;
-      map[s.mapel].babs.add(s.bab);
+      const kls = s.kelas||'XI';
+      const key = s.mapel+'__'+kls;
+      if(!map[key]) map[key]={ mapel:s.mapel, kelas:kls, total:0, aktif:0, babs:new Set() };
+      map[key].total++;
+      if(s.aktif) map[key].aktif++;
+      map[key].babs.add(s.bab);
     });
     const list = Object.values(map).map(p=>({ ...p, bab_count:p.babs.size }));
-    // Urutkan sesuai MAPEL_LIST
+    // Urutkan: mapel dulu, lalu kelas
     list.sort((a,b)=>{
       const ia = MAPEL_LIST.findIndex(m=>m.value===a.mapel);
       const ib = MAPEL_LIST.findIndex(m=>m.value===b.mapel);
-      return (ia===-1?99:ia) - (ib===-1?99:ib);
+      if(ia !== ib) return (ia===-1?99:ia) - (ib===-1?99:ib);
+      return (a.kelas||'').localeCompare(b.kelas||'');
     });
     setPaketList(list);
     setLoading(false);
@@ -398,17 +446,17 @@ function TabSoal({ adminId, showToast }) {
   const handleDeletePaket = async()=>{
     if(!delMapel) return;
     setSaving(true);
-    const { error } = await supabase.from('soal').delete().eq('mapel', delMapel);
+    const { error } = await supabase.from('soal').delete().eq('mapel', delMapel.mapel).eq('kelas', delMapel.kelas||'XI');
     setSaving(false); setDelMapel(null);
     if(error) showToast(error.message,'error');
-    else { showToast(`Paket ${getCfg(delMapel).label} dihapus.`); fetchPaket(); }
+    else { showToast(`Paket ${getCfg(delMapel.mapel).label} Kelas ${delMapel.kelas} dihapus.`); fetchPaket(); }
   };
 
   const totalSoal = paketList.reduce((a,p)=>a+p.total,0);
 
   // Mapel yang belum punya paket (untuk info)
   const existing  = new Set(paketList.map(p=>p.mapel));
-  const kosong    = MAPEL_LIST.filter(m=>!existing.has(m.value));
+  const kosong    = MAPEL_LIST.filter(m=>!existing.has(m.value) && m.value!=='default');
 
   return (
     <div className="space-y-6">
@@ -439,8 +487,9 @@ function TabSoal({ adminId, showToast }) {
           {paketList.map(p=>{
             const cfg = getCfg(p.mapel);
             const pctAktif = p.total>0 ? Math.round((p.aktif/p.total)*100) : 0;
+            const paketKey = p.mapel+'__'+(p.kelas||'XI');
             return (
-              <div key={p.mapel} className="rounded-2xl overflow-hidden transition-all hover:scale-[1.01]"
+              <div key={paketKey} className="rounded-2xl overflow-hidden transition-all hover:scale-[1.01]"
                 style={{ background:'#0D1929', border:`1px solid ${cfg.color}33`, boxShadow:`0 0 20px ${cfg.color}08` }}>
                 {/* Card header */}
                 <div className="px-5 pt-5 pb-4" style={{ background:`linear-gradient(135deg,${cfg.color}0D,#0D1929)` }}>
@@ -450,7 +499,10 @@ function TabSoal({ adminId, showToast }) {
                         <MI name={cfg.icon} style={{ color:cfg.color, fontSize:24 }}/>
                       </div>
                       <div>
-                        <h3 className="font-black text-base" style={{ color:cfg.color }}>{cfg.label}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-base" style={{ color:cfg.color }}>{cfg.label}</h3>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background:'rgba(255,255,255,0.06)', color:'#94A3B8', border:'1px solid rgba(255,255,255,0.1)' }}>Kelas {p.kelas||'XI'}</span>
+                        </div>
                         <p className="text-xs mt-0.5" style={{ color:'#475569' }}>{p.bab_count} bab</p>
                       </div>
                     </div>
@@ -475,12 +527,12 @@ function TabSoal({ adminId, showToast }) {
 
                 {/* Card actions */}
                 <div className="flex items-center gap-2 px-5 py-3" style={{ borderTop:`1px solid ${cfg.color}22` }}>
-                  <button onClick={()=>setDetailMapel(p.mapel)}
+                  <button onClick={()=>setDetailPaket({mapel:p.mapel,kelas:p.kelas||'XI'})}
                     className="flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                     style={{ background:cfg.color+'22', color:cfg.color, border:`1px solid ${cfg.color}44` }}>
                     <MI name="list_alt" style={{fontSize:14}}/>Lihat Soal
                   </button>
-                  <button onClick={()=>setDelMapel(p.mapel)}
+                  <button onClick={()=>setDelMapel({mapel:p.mapel,kelas:p.kelas||'XI'})}
                     className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
                     style={{ background:'#F43F5E11', color:'#F43F5E', border:'1px solid #F43F5E33' }}
                     title={`Hapus semua soal ${cfg.label}`}>
@@ -507,17 +559,18 @@ function TabSoal({ adminId, showToast }) {
       <ImportModal open={importOpen} onClose={()=>setImport(false)} onImport={handleImport} saving={saving}/>
 
       <DetailPaketModal
-        open={!!detailMapel}
-        onClose={()=>setDetailMapel(null)}
-        mapel={detailMapel}
+        open={!!detailPaket}
+        onClose={()=>setDetailPaket(null)}
+        mapel={detailPaket?.mapel}
+        kelas={detailPaket?.kelas}
         onDeleteSoal={fetchPaket}
         showToast={showToast}
       />
 
       <Confirm
         open={!!delMapel}
-        title={`Hapus Paket ${getCfg(delMapel||'').label}?`}
-        msg={`Semua soal dalam paket ${getCfg(delMapel||'').label} akan dihapus permanen dari database. Tindakan ini tidak dapat dibatalkan.`}
+        title={`Hapus Paket ${getCfg(delMapel?.mapel||'').label} Kelas ${delMapel?.kelas||''}?`}
+        msg={`Semua soal ${getCfg(delMapel?.mapel||'').label} Kelas ${delMapel?.kelas||''} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
         onYes={handleDeletePaket}
         onNo={()=>setDelMapel(null)}
         loading={saving}
@@ -598,7 +651,7 @@ function TabUsers({ showToast }) {
   return (
     <div className="space-y-4">
       {editUser && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
           <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F' }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
               <h2 className="font-bold flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="edit" style={{fontSize:18}}/>Edit User</h2>
