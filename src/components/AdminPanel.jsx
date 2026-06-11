@@ -31,7 +31,7 @@ function Toast({ toast }) {
 function Confirm({ open, title, msg, onYes, onNo, loading }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)' }}>
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
       <div className="rounded-2xl p-6 text-center max-w-sm w-full" style={{ background:'#0D1929', border:'1px solid #F43F5E44' }}>
         <MI name="warning" style={{ color:'#F59E0B', fontSize:40, display:'block', margin:'0 auto 12px' }}/>
         <h3 className="font-bold text-lg mb-2" style={{ color:'#E2E8F0' }}>{title}</h3>
@@ -78,7 +78,7 @@ function SoalModal({ open, onClose, initial, onSave, saving }) {
   const setPilihan = (i,v) => { const p=[...form.pilihan]; p[i]=v; set('pilihan',p); };
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ background:'linear-gradient(135deg,#00E5FF08,#0D1929)', borderBottom:'1px solid #1E3A5F' }}>
           <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}>
@@ -170,7 +170,7 @@ function ImportModal({ open, onClose, onImport, saving }) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.94)', backdropFilter:'blur(8px)' }}>
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.94)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F', maxHeight:'90vh', overflowY:'auto' }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
           <h2 className="font-bold text-lg flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="upload_file" style={{fontSize:20}}/>Import Soal — Upload File .js</h2>
@@ -270,7 +270,7 @@ function DetailPaketModal({ open, onClose, mapel, onDeleteSoal, showToast }) {
 
   if(!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(8px)' }}>
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
       <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col" style={{ background:'#0D1929', border:`1px solid ${cfg.color}33`, maxHeight:'90vh' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom:'1px solid #1E3A5F', background:`linear-gradient(135deg,${cfg.color}0A,#0D1929)` }}>
@@ -598,7 +598,7 @@ function TabUsers({ showToast }) {
   return (
     <div className="space-y-4">
       {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(8px)' }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background:'rgba(5,11,24,0.92)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', zIndex:99999 }}>
           <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background:'#0D1929', border:'1px solid #1E3A5F' }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom:'1px solid #1E3A5F' }}>
               <h2 className="font-bold flex items-center gap-2" style={{ color:'#00E5FF' }}><MI name="edit" style={{fontSize:18}}/>Edit User</h2>
