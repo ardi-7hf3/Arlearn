@@ -24,26 +24,28 @@ const MI = ({ name, style, className }) => (
   <span className={`material-icons${className?' '+className:''}`} style={style}>{name}</span>
 );
 
-async function fetchSoal(mapel = null, bab = null) {
+async function fetchSoal(mapel = null, kelas = null, bab = null) {
   let q = supabase.from('soal')
-    .select('id,mapel,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan')
+    .select('id,mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan')
     .eq('aktif', true);
   if (mapel) q = q.eq('mapel', mapel);
+  if (kelas) q = q.eq('kelas', kelas);
   if (bab && bab !== '__all__') q = q.eq('bab', bab);
   const { data } = await q.order('id');
   return (data || []).map(s => ({
-    id: s.id, mapel: s.mapel, bab: s.bab, namaBab: s.nama_bab,
+    id: s.id, mapel: s.mapel, kelas: s.kelas || 'XI', bab: s.bab, namaBab: s.nama_bab,
     teks: s.teks, pilihan: Array.isArray(s.pilihan) ? s.pilihan : JSON.parse(s.pilihan || '[]'),
     jawabanBenar: s.jawaban_benar, penjelasan: s.penjelasan, pembahasan: s.pembahasan,
   }));
 }
 
 async function fetchMapelBab() {
-  const { data } = await supabase.from('soal').select('mapel,bab,nama_bab').eq('aktif', true).order('mapel').order('bab');
+  const { data } = await supabase.from('soal').select('mapel,kelas,bab,nama_bab').eq('aktif', true).order('mapel').order('kelas').order('bab');
   const map = {};
   for (const s of data || []) {
-    const key = `${s.mapel}__${s.bab}`;
-    if (!map[key]) map[key] = { mapel: s.mapel, bab: s.bab, namaBab: s.nama_bab, jumlah: 0 };
+    const kls = s.kelas || 'XI';
+    const key = `${s.mapel}__${kls}__${s.bab}`;
+    if (!map[key]) map[key] = { mapel: s.mapel, kelas: kls, bab: s.bab, namaBab: s.nama_bab, jumlah: 0 };
     map[key].jumlah++;
   }
   return Object.values(map);
@@ -587,29 +589,50 @@ function LoginPage({ onLogin }) {
   );
 }
 
+// ─── KELAS YANG TERSEDIA ───
+const KELAS_ALL = ['X', 'XI', 'XII'];
+
 // ─── BAB SELECTOR PAGE ───
 function BabSelectorPage({ userName, onMulai }) {
+  // bankData: { kimia: { XI: { bab1:{namaBab,jumlah}, ... }, XII: {...} }, ... }
   const [bankData, setBankData] = useState({});
-  const [selMapel, setSelMapel] = useState(null);
-  const [selBab, setSelBab]     = useState(null);
+  const [selMapel, setSelMapel] = useState(null);  // mapel yang dipilih (string)
+  const [selKelas, setSelKelas] = useState(null);  // kelas yang dipilih ('XI','XII',dst)
+  const [selBab,   setSelBab]   = useState(null);
+  const [dropOpen, setDropOpen] = useState(false); // dropdown mapel
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     fetchMapelBab().then(list => {
+      // Susun: bankData[mapel][kelas][bab] = {namaBab, jumlah}
       const map = {};
-      list.forEach(({ mapel, bab, namaBab, jumlah }) => {
+      list.forEach(({ mapel, kelas, bab, namaBab, jumlah }) => {
         if (!map[mapel]) map[mapel] = {};
-        map[mapel][bab] = { namaBab, jumlah };
+        if (!map[mapel][kelas]) map[mapel][kelas] = {};
+        map[mapel][kelas][bab] = { namaBab, jumlah };
       });
       setBankData(map);
       setLoading(false);
     });
   }, []);
 
-  const mapelList = Object.keys(bankData);
-  const babList   = selMapel ? Object.entries(bankData[selMapel] || {}) : [];
-  const totalMapel = selMapel ? Object.values(bankData[selMapel]||{}).reduce((a,b)=>a+b.jumlah,0) : 0;
+  const mapelList = Object.keys(bankData); // ['kimia','fisika',...]
+
+  // Kelas yang ada untuk mapel terpilih
+  const kelasAda  = selMapel ? Object.keys(bankData[selMapel] || {}).sort() : [];
+
+  // Bab list untuk mapel+kelas terpilih
+  const babList   = (selMapel && selKelas) ? Object.entries(bankData[selMapel]?.[selKelas] || {}) : [];
+  const totalKelas = (selMapel && selKelas)
+    ? Object.values(bankData[selMapel]?.[selKelas] || {}).reduce((a,b)=>a+b.jumlah,0) : 0;
+  const totalMapel = selMapel
+    ? Object.values(bankData[selMapel]||{}).flatMap(k=>Object.values(k)).reduce((a,b)=>a+b.jumlah,0) : 0;
+
   const cfg = selMapel ? getCfg(selMapel) : null;
+
+  const handleSelMapel = (mapel) => {
+    setSelMapel(mapel); setSelKelas(null); setSelBab(null); setDropOpen(false);
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -619,55 +642,163 @@ function BabSelectorPage({ userName, onMulai }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fadeIn">
+      {/* Header */}
       <div className="mb-7">
         <h1 style={{ fontFamily:'"Poppins",serif',fontWeight:800,fontStyle:'italic',fontSize:'clamp(1.4rem,5vw,1.9rem)',color:'#F0F6FF',lineHeight:1.2 }}>
           Halo, {userName}! <MI name="waving_hand" style={{ color:'#F59E0B',fontSize:'1em',verticalAlign:'middle' }}/>
         </h1>
-        <p className="text-sm mt-1" style={{ color:'#475569' }}>Pilih mata pelajaran dan bab untuk tryout</p>
+        <p className="text-sm mt-1" style={{ color:'#475569' }}>Pilih mata pelajaran, kelas, dan bab untuk tryout</p>
       </div>
 
-      {/* Step 1 */}
+      {/* ── STEP 1: DROPDOWN MATA PELAJARAN ── */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background:'linear-gradient(135deg,#F97316,#FB923C)',color:'#fff' }}>1</span>
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{ background:'linear-gradient(135deg,#F97316,#FB923C)',color:'#fff' }}>1</span>
           <span className="text-sm font-semibold" style={{ color:'#94A3B8' }}>Pilih Mata Pelajaran</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {mapelList.map(mapel => {
-            const mc = getCfg(mapel);
-            const isActive = selMapel === mapel;
-            const total = Object.values(bankData[mapel]).reduce((a,b)=>a+b.jumlah,0);
-            const jumlahBab = Object.keys(bankData[mapel]).length;
-            return (
-              <button key={mapel} onClick={()=>{ setSelMapel(mapel); setSelBab(null); }}
-                className="text-left rounded-2xl p-4 transition-all duration-200"
-                style={{ background:isActive?mc.bg:'#111827', border:`1.5px solid ${isActive?mc.color:'#1E293B'}`, boxShadow:isActive?`0 0 20px ${mc.glow}`:'none', transform:isActive?'translateY(-1px)':'none' }}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:isActive?mc.bg:'rgba(255,255,255,0.04)',border:`1px solid ${isActive?mc.border:'#1E293B'}` }}>
-                    <MI name={mc.icon} style={{ color:mc.color, fontSize:22 }}/>
-                  </div>
-                  {isActive && <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background:mc.color }}><MI name="check" style={{ color:'#050B18', fontSize:14 }}/></div>}
+
+        {/* Dropdown trigger */}
+        <div className="relative">
+          <button onClick={()=>setDropOpen(o=>!o)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all"
+            style={{ background: selMapel ? getCfg(selMapel).bg : '#111827', border:`1.5px solid ${selMapel ? getCfg(selMapel).color : '#1E293B'}`, boxShadow: selMapel ? `0 0 20px ${getCfg(selMapel).glow}` : 'none' }}>
+            {selMapel ? (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: getCfg(selMapel).bg, border:`1px solid ${getCfg(selMapel).border}` }}>
+                  <MI name={getCfg(selMapel).icon} style={{ color:getCfg(selMapel).color, fontSize:20 }}/>
                 </div>
-                <div className="font-bold text-sm mb-1" style={{ color:isActive?mc.color:'#E2E8F0' }}>{mc.label}</div>
-                <div className="text-xs" style={{ color:'#475569' }}>{jumlahBab} bab · {total} soal</div>
+                <div className="flex-1 text-left">
+                  <div className="font-bold text-sm" style={{ color: getCfg(selMapel).color }}>{getCfg(selMapel).label}</div>
+                  <div className="text-xs" style={{ color:'#475569' }}>{totalMapel} soal tersedia</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:'#1E293B' }}>
+                  <MI name="menu_book" style={{ color:'#475569', fontSize:20 }}/>
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="text-sm" style={{ color:'#64748B' }}>Pilih mata pelajaran...</div>
+                </div>
+              </>
+            )}
+            <MI name={dropOpen?'expand_less':'expand_more'} style={{ color:'#64748B', fontSize:22, flexShrink:0 }}/>
+          </button>
+
+          {/* Dropdown menu */}
+          {dropOpen && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-20"
+              style={{ background:'#0D1929', border:'1px solid #1E3A5F', boxShadow:'0 16px 48px rgba(0,0,0,0.7)' }}>
+              {mapelList.map(mapel => {
+                const mc = getCfg(mapel);
+                const tot = Object.values(bankData[mapel]||{}).flatMap(k=>Object.values(k)).reduce((a,b)=>a+b.jumlah,0);
+                const klsAda = Object.keys(bankData[mapel]||{}).sort().join(', ');
+                return (
+                  <button key={mapel} onClick={()=>handleSelMapel(mapel)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 transition-all"
+                    style={{ background: selMapel===mapel ? mc.bg : 'transparent', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background:mc.bg, border:`1px solid ${mc.border}` }}>
+                      <MI name={mc.icon} style={{ color:mc.color, fontSize:20 }}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-sm" style={{ color:mc.color }}>{mc.label}</div>
+                      <div className="text-xs" style={{ color:'#475569' }}>Kelas {klsAda} · {tot} soal</div>
+                    </div>
+                    {selMapel===mapel && <MI name="check_circle" style={{ color:mc.color, fontSize:18, flexShrink:0 }}/>}
+                  </button>
+                );
+              })}
+              {/* Siluet mapel yang belum ada soal */}
+              {Object.keys(MAPEL_CFG).filter(m=>m!=='default'&&!mapelList.includes(m)).map(mapel => {
+                const mc = getCfg(mapel);
+                return (
+                  <div key={mapel} className="flex items-center gap-3 px-4 py-3.5 opacity-30"
+                    style={{ borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'not-allowed' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background:'#1E293B', border:'1px solid #2D3748' }}>
+                      <MI name={mc.icon} style={{ color:'#334155', fontSize:20 }}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-sm" style={{ color:'#334155' }}>{mc.label}</div>
+                      <div className="text-xs" style={{ color:'#1E293B' }}>Belum ada soal</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── STEP 2: PILIH KELAS ── */}
+      <div className={`mb-6 transition-all duration-300 ${selMapel?'opacity-100':'opacity-40 pointer-events-none'}`}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{ background:selMapel?'linear-gradient(135deg,#F97316,#FB923C)':'#1E293B', color:selMapel?'#fff':'#475569' }}>2</span>
+          <span className="text-sm font-semibold" style={{ color:selMapel?'#94A3B8':'#334155' }}>Pilih Kelas</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {KELAS_ALL.map(kls => {
+            const ada    = kelasAda.includes(kls);
+            const isActive = selKelas === kls;
+            const jumlah = ada
+              ? Object.values(bankData[selMapel]?.[kls]||{}).reduce((a,b)=>a+b.jumlah,0)
+              : 0;
+            return (
+              <button key={kls}
+                onClick={()=>{ if(ada){ setSelKelas(kls); setSelBab(null); } }}
+                disabled={!ada}
+                className="flex flex-col items-center py-4 rounded-2xl transition-all duration-200"
+                style={{
+                  background: isActive ? cfg?.bg : ada ? '#111827' : '#0A1222',
+                  border:`1.5px solid ${isActive ? cfg?.color : ada ? '#1E293B' : '#111827'}`,
+                  boxShadow: isActive ? `0 0 20px ${cfg?.glow}` : 'none',
+                  opacity: ada ? 1 : 0.35,
+                  cursor: ada ? 'pointer' : 'not-allowed',
+                }}>
+                {/* Ikon kelas */}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+                  style={{ background: isActive ? cfg?.bg : ada ? '#1E293B' : '#111827', border:`1px solid ${isActive ? cfg?.border : ada ? '#2D3748' : '#1A1A2E'}` }}>
+                  {ada
+                    ? <MI name="school" style={{ color: isActive ? cfg?.color : '#64748B', fontSize:20 }}/>
+                    : <MI name="lock" style={{ color:'#1E293B', fontSize:18 }}/>
+                  }
+                </div>
+                <div className="font-black text-sm" style={{ color: isActive ? cfg?.color : ada ? '#E2E8F0' : '#2D3748' }}>
+                  Kelas {kls}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: ada ? '#475569' : '#1E293B' }}>
+                  {ada ? `${jumlah} soal` : 'Belum ada'}
+                </div>
+                {isActive && (
+                  <div className="mt-2 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: cfg?.color }}>
+                    <MI name="check" style={{ color:'#050B18', fontSize:14 }}/>
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Step 2 */}
-      <div className={`mb-6 transition-all duration-300 ${selMapel?'opacity-100':'opacity-40 pointer-events-none'}`}>
+      {/* ── STEP 3: PILIH BAB ── */}
+      <div className={`mb-6 transition-all duration-300 ${selKelas?'opacity-100':'opacity-40 pointer-events-none'}`}>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background:selMapel?'linear-gradient(135deg,#F97316,#FB923C)':'#1E293B', color:selMapel?'#fff':'#475569' }}>2</span>
-          <span className="text-sm font-semibold" style={{ color:selMapel?'#94A3B8':'#334155' }}>
-            {selMapel?`Pilih Bab — ${cfg?.label} (${totalMapel} soal)`:'Pilih Bab'}
+            style={{ background:selKelas?'linear-gradient(135deg,#F97316,#FB923C)':'#1E293B', color:selKelas?'#fff':'#475569' }}>3</span>
+          <span className="text-sm font-semibold" style={{ color:selKelas?'#94A3B8':'#334155' }}>
+            {selKelas ? `Pilih Bab — ${cfg?.label} Kelas ${selKelas} (${totalKelas} soal)` : 'Pilih Bab'}
           </span>
         </div>
-        {selMapel ? (
+
+        {selKelas ? (
           <div className="space-y-2">
-            {[['__all__',{ namaBab:'Semua Bab', jumlah:totalMapel }],...babList].map(([babKey,{namaBab,jumlah}], idx) => {
+            {[['__all__',{ namaBab:'Semua Bab', jumlah:totalKelas }], ...babList].map(([babKey,{namaBab,jumlah}], idx) => {
               const isActive = selBab === babKey;
               return (
                 <button key={babKey} onClick={()=>setSelBab(babKey)}
@@ -675,7 +806,7 @@ function BabSelectorPage({ userName, onMulai }) {
                   style={{ background:isActive?cfg.bg:'#111827', border:`1.5px solid ${isActive?cfg.color:'#1E293B'}`, boxShadow:isActive?`0 0 16px ${cfg.glow}`:'none' }}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
                     style={{ background:isActive?cfg.bg:'#1E293B', border:`1px solid ${isActive?cfg.border:'#2D3748'}`, color:isActive?cfg.color:'#64748B' }}>
-                    {babKey==='__all__'?<MI name="layers" style={{fontSize:16}}/>:idx}
+                    {babKey==='__all__' ? <MI name="layers" style={{fontSize:16}}/> : idx}
                   </div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-semibold" style={{ color:isActive?cfg.color:'#E2E8F0' }}>{namaBab}</div>
@@ -687,22 +818,22 @@ function BabSelectorPage({ userName, onMulai }) {
             })}
           </div>
         ) : (
-          <div className="rounded-xl p-6 text-center" style={{ background:'#0D1526',border:'1px dashed #1E293B' }}>
+          <div className="rounded-xl p-6 text-center" style={{ background:'#0D1526', border:'1px dashed #1E293B' }}>
             <MI name="arrow_upward" style={{ color:'#334155', fontSize:28, display:'block', margin:'0 auto 8px' }}/>
-            <span className="text-sm" style={{ color:'#334155' }}>Pilih mata pelajaran terlebih dahulu</span>
+            <span className="text-sm" style={{ color:'#334155' }}>Pilih kelas terlebih dahulu</span>
           </div>
         )}
       </div>
 
-      {/* CTA */}
-      {selMapel && selBab ? (
-        <button onClick={()=>onMulai({ mapel:selMapel, bab:selBab })}
+      {/* ── CTA MULAI ── */}
+      {selMapel && selKelas && selBab ? (
+        <button onClick={()=>onMulai({ mapel:selMapel, kelas:selKelas, bab:selBab })}
           className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
           style={{ background:'linear-gradient(135deg,#F97316,#FB923C)',color:'#fff',boxShadow:'0 0 24px rgba(249,115,22,0.4)' }}>
           <MI name="play_arrow" style={{fontSize:20}}/>Mulai Tryout
         </button>
       ) : (
-        <div className="rounded-2xl py-4 text-center" style={{ background:'#0D1526',border:'1px dashed #1E293B' }}>
+        <div className="rounded-2xl py-4 text-center" style={{ background:'#0D1526', border:'1px dashed #1E293B' }}>
           <span className="text-sm" style={{ color:'#334155' }}>Selesaikan pilihan di atas untuk mulai tryout</span>
         </div>
       )}
@@ -819,7 +950,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
 
   useEffect(() => {
     setLoading(true); setJawaban({}); setCurrIdx(0);
-    fetchSoal(filter?.mapel, filter?.bab).then(list=>{ setSoalList(list); setLoading(false); });
+    fetchSoal(filter?.mapel, filter?.kelas, filter?.bab).then(list=>{ setSoalList(list); setLoading(false); });
   }, [filter]);
 
   const total        = soalList.length;
@@ -838,7 +969,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
     const benar = soalList.filter((s,i)=>jawaban[i]===s.jawabanBenar).length;
     const salah  = total - benar;
     const skor   = Math.round((benar/total)*100);
-    await saveRiwayat(userId, { mapel:filter?.mapel, bab:filter?.bab, namaBab:soalList[0]?.namaBab, totalSoal:total, benar, salah, skor, detail:jawaban });
+    await saveRiwayat(userId, { mapel:filter?.mapel, kelas:filter?.kelas, bab:filter?.bab, namaBab:soalList[0]?.namaBab, totalSoal:total, benar, salah, skor, detail:jawaban });
     setShowHasil(true);
   };
 
@@ -862,7 +993,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
           <MI name="arrow_back" style={{fontSize:14}}/>Ganti Bab
         </button>
         <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background:mapelCfg.bg,color:mapelCfg.color,border:`1px solid ${mapelCfg.border}` }}>
-          {soalList[0]?.namaBab || mapelCfg.label}
+          {soalList[0]?.namaBab || mapelCfg.label}{filter?.kelas ? ` · Kelas ${filter.kelas}` : ''}
         </span>
       </div>
 
