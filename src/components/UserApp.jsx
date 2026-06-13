@@ -57,11 +57,25 @@ async function fetchRiwayat(userId) {
 }
 
 async function saveRiwayat(userId, entry) {
+  // soal_list: snapshot soal (teks, pilihan, jawaban, penjelasan, pembahasan)
+  const soalSnapshot = (entry.soalList||[]).map(s=>({
+    id: s.id, mapel: s.mapel, bab: s.bab,
+    teks: s.teks, pilihan: s.pilihan,
+    jawabanBenar: s.jawabanBenar,
+    penjelasan: s.penjelasan,
+    pembahasan: s.pembahasan,
+  }));
   await supabase.from('riwayat').insert({
-    user_id: userId, mapel: entry.mapel || null, bab: entry.bab || null,
-    nama_bab: entry.namaBab || null, total_soal: entry.totalSoal,
+    user_id: userId,
+    mapel: entry.mapel || null,
+    kelas: entry.kelas || null,
+    bab: entry.bab || null,
+    nama_bab: entry.namaBab || null,
+    total_soal: entry.totalSoal,
     benar: entry.benar, salah: entry.salah, skor: entry.skor,
-    durasi_detik: entry.durasiDetik || null, detail: entry.detail || null,
+    durasi_detik: entry.durasiDetik || null,
+    detail: entry.detail || null,
+    soal_list: soalSnapshot.length > 0 ? soalSnapshot : null,
   });
 }
 
@@ -361,7 +375,7 @@ function Alert({ show, tipe='info', judul, pesan, onOk, onYes, onNo, okLabel='OK
   };
   const ic = IC[tipe] || IC.info;
   const S = { btn: { padding:'0.625rem 1rem', borderRadius:12, fontSize:'0.875rem', fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, flex:1 } };
-  return createPortal(
+  const portal = createPortal(
     <div style={{ position:'fixed',inset:0,zIndex:99999,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem',background:'rgba(5,11,24,0.92)',backdropFilter:'blur(12px)',animation:'alertFadeIn 0.18s ease both' }}>
       <div style={{ width:'100%',maxWidth:420,borderRadius:20,padding:'1.75rem',background:'#111827',border:'1px solid rgba(0,229,255,0.2)',boxShadow:'0 24px 64px rgba(0,0,0,0.75)',animation:'alertSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}>
         <div style={{ width:56,height:56,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1rem',background:ic.bg,border:`2px solid ${ic.bd}` }}>
@@ -969,7 +983,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
     const benar = soalList.filter((s,i)=>jawaban[i]===s.jawabanBenar).length;
     const salah  = total - benar;
     const skor   = Math.round((benar/total)*100);
-    await saveRiwayat(userId, { mapel:filter?.mapel, kelas:filter?.kelas, bab:filter?.bab, namaBab:soalList[0]?.namaBab, totalSoal:total, benar, salah, skor, detail:jawaban });
+    await saveRiwayat(userId, { mapel:filter?.mapel, kelas:filter?.kelas, bab:filter?.bab, namaBab:soalList[0]?.namaBab, totalSoal:total, benar, salah, skor, detail:jawaban, soalList });
     setShowHasil(true);
   };
 
@@ -1085,30 +1099,228 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
 }
 
 // ─── RIWAYAT PAGE ───
-function DetailModal({ show, data, onClose }) {
-  if (!show || !data) return null;
-  const sc = (s)=>s>=80?'#10B981':s>=60?'#F59E0B':'#EF4444';
+
+// ── Detail Soal Modal (slide dari bawah) ──
+function SoalDetailPanel({ soal, jawabanUser, onClose }) {
+  if (!soal) return null;
+  const idx       = soal._idx;
+  const isBenar   = jawabanUser[idx] === soal.jawabanBenar;
+  const mapelCfg  = getCfg(soal.mapel);
   return createPortal(
-    <div style={{ position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'1rem',overflowY:'auto',background:'rgba(5,11,24,0.92)',backdropFilter:'blur(12px)',animation:'alertFadeIn 0.18s ease both' }} onClick={onClose}>
-      <div style={{ width:'100%',maxWidth:640,borderRadius:20,overflow:'hidden',background:'#111827',border:'1px solid rgba(0,229,255,0.18)',boxShadow:'0 24px 80px rgba(0,0,0,0.75)',marginTop:8 }} onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 sticky top-0" style={{ background:'#111827',borderBottom:'1px solid #1E293B',zIndex:2 }}>
-          <div><h2 className="font-bold text-base flex items-center gap-2" style={{ color:'#F0F6FF' }}><MI name="bar_chart" style={{ color:'#00E5FF', fontSize:18 }}/>Detail Riwayat</h2>
-            <p className="text-xs mt-0.5" style={{ color:'#64748B' }}>{formatTgl(data.tanggal)}</p></div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ color:'#64748B' }}><MI name="close" style={{fontSize:18}}/></button>
+    <div style={{ position:'fixed',inset:0,zIndex:10000,display:'flex',flexDirection:'column',justifyContent:'flex-end',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(8px)',animation:'alertFadeIn 0.18s ease both' }}
+      onClick={onClose}>
+      <div style={{ background:'#111827',borderRadius:'20px 20px 0 0',border:'1px solid rgba(0,229,255,0.18)',maxHeight:'88vh',overflowY:'auto',boxShadow:'0 -16px 60px rgba(0,0,0,0.7)' }}
+        onClick={e=>e.stopPropagation()}>
+
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div style={{ width:40,height:4,borderRadius:4,background:'#2D3748' }}/>
         </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom:'1px solid #1E293B' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background:mapelCfg.bg,color:mapelCfg.color,border:`1px solid ${mapelCfg.border}` }}>
+              {mapelCfg.labelUp}
+            </span>
+            <span className="text-xs font-semibold" style={{ color:'#475569' }}>Soal {idx+1}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+              style={{ background:isBenar?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)', color:isBenar?'#10B981':'#EF4444', border:`1px solid ${isBenar?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)'}` }}>
+              <MI name={isBenar?'check_circle':'cancel'} style={{fontSize:13}}/>
+              {isBenar?'Benar':'Salah'}
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:'#1E293B',color:'#64748B' }}>
+              <MI name="close" style={{fontSize:18}}/>
+            </button>
+          </div>
+        </div>
+
+        {/* Teks Soal */}
+        <div className="px-5 py-4">
+          <div className="font-semibold text-base leading-relaxed" style={{ color:'#F0F6FF' }}>
+            <Latex text={soal.teks}/>
+          </div>
+        </div>
+
+        {/* Pilihan */}
+        <div className="px-4 pb-4 space-y-2">
+          {soal.pilihan.map((opt, j) => {
+            const isK = j === soal.jawabanBenar;
+            const isP = j === jawabanUser[idx];
+            const isW = isP && !isK;
+            let bg='#0B1121', border='#1E293B', txt='#94A3B8', lbg='#1E293B', lcol='#64748B';
+            if (isK)      { bg='rgba(16,185,129,0.08)';  border='#10B981'; txt='#10B981'; lbg='rgba(16,185,129,0.2)';  lcol='#10B981'; }
+            else if (isW) { bg='rgba(239,68,68,0.08)';   border='#EF4444'; txt='#EF4444'; lbg='rgba(239,68,68,0.2)';   lcol='#EF4444'; }
+            return (
+              <div key={j} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+                style={{ background:bg, border:`1.5px solid ${border}` }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                  style={{ background:lbg, color:lcol }}>{OPTS[j]}</div>
+                <span className="flex-1 text-sm leading-relaxed" style={{ color:txt }}><Latex text={opt}/></span>
+                {isK && <MI name="check_circle" style={{ color:'#10B981', fontSize:20 }}/>}
+                {isW && <MI name="cancel" style={{ color:'#EF4444', fontSize:20 }}/>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Penjelasan lengkap */}
+        {soal.penjelasan && (
+          <div className="mx-4 mb-6">
+            <PenjelasanBox penjelasan={soal.penjelasan} pembahasan={soal.pembahasan}/>
+          </div>
+        )}
+      </div>
+    </div>, document.body
+  );
+}
+
+function DetailModal({ show, data, onClose }) {
+  const [selSoal, setSelSoal] = useState(null); // soal yang diklik untuk lihat penjelasan
+  const [filterSalah, setFilterSalah] = useState(false);
+  useEffect(() => { if (!show) { setSelSoal(null); setFilterSalah(false); } }, [show]);
+
+  if (!show || !data) return null;
+  const sc = (s) => s>=80?'#10B981':s>=60?'#F59E0B':'#EF4444';
+
+  // Rekonstruksi daftar soal dari data.detail (simpan jawaban user per index)
+  // data.detail = { 0: jawabanIdx, 1: jawabanIdx, ... }
+  const detailArr = Object.entries(data.detail||{}).map(([i, jawaban]) => ({
+    _idx: parseInt(i), jawaban,
+  }));
+
+  // Soal yang tersimpan di data (jika ada field soal_snapshot) atau dari detail saja
+  // Kita gunakan data.soal_list jika ada, fallback ke null (hanya tampil nomor)
+  const soalList = data.soal_list || null;
+  const jumlahSoal = data.total_soal || detailArr.length;
+
+  // Build display list
+  const displayItems = Array.from({ length: jumlahSoal }, (_, i) => {
+    const snap = soalList ? soalList[i] : null;
+    const jawabanUser = data.detail?.[i];
+    const isBenar = snap ? jawabanUser === snap.jawabanBenar : null;
+    return { _idx: i, jawabanUser, isBenar, ...(snap||{}) };
+  });
+
+  const filtered = filterSalah ? displayItems.filter(s => s.isBenar === false) : displayItems;
+
+  const portal = createPortal(
+    <div style={{ position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'1rem',overflowY:'auto',background:'rgba(5,11,24,0.92)',backdropFilter:'blur(12px)',animation:'alertFadeIn 0.18s ease both' }}
+      onClick={onClose}>
+      <div style={{ width:'100%',maxWidth:640,borderRadius:20,overflow:'hidden',background:'#111827',border:'1px solid rgba(0,229,255,0.18)',boxShadow:'0 24px 80px rgba(0,0,0,0.75)',marginTop:8 }}
+        onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 sticky top-0" style={{ background:'#111827',borderBottom:'1px solid #1E293B',zIndex:2 }}>
+          <div>
+            <h2 className="font-bold text-base flex items-center gap-2" style={{ color:'#F0F6FF' }}>
+              <MI name="bar_chart" style={{ color:'#00E5FF', fontSize:18 }}/>Detail Riwayat
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color:'#64748B' }}>{formatTgl(data.tanggal)}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ color:'#64748B' }}>
+            <MI name="close" style={{fontSize:18}}/>
+          </button>
+        </div>
+
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 p-4 pb-3">
           {[{l:'Skor',v:data.skor,c:'#00E5FF',i:'star'},{l:'Benar',v:data.benar,c:'#10B981',i:'check_circle'},{l:'Salah',v:data.salah,c:'#EF4444',i:'cancel'}].map(s=>(
             <div key={s.l} className="rounded-xl p-3 text-center" style={{ background:'#0B1121',border:'1px solid #1E293B' }}>
-              <MI name={s.i} style={{ color:s.c, fontSize:22, display:'block', margin:'0 auto 4px' }}/><div className="font-black text-xl" style={{ color:s.c }}>{s.v}</div><div className="text-xs" style={{ color:'#64748B' }}>{s.l}</div>
+              <MI name={s.i} style={{ color:s.c, fontSize:22, display:'block', margin:'0 auto 4px' }}/>
+              <div className="font-black text-xl" style={{ color:s.c }}>{s.v}</div>
+              <div className="text-xs" style={{ color:'#64748B' }}>{s.l}</div>
             </div>
           ))}
         </div>
+
+        {/* Daftar soal */}
         <div className="px-4 pb-4">
-          <p className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color:'#475569' }}><MI name="checklist" style={{fontSize:14}}/>Rincian Jawaban</p>
-          <p className="text-xs" style={{ color:'#334155' }}>Skor: <strong style={{ color:sc(data.skor) }}>{data.skor}</strong> · {data.benar} benar · {data.salah} salah dari {data.total_soal} soal</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color:'#475569' }}>
+              <MI name="checklist" style={{fontSize:14}}/>Daftar Soal
+              {soalList && <span style={{ color:'#334155' }}>· Klik soal untuk lihat penjelasan</span>}
+            </p>
+            {soalList && (
+              <div className="flex items-center gap-1">
+                {[{f:false,l:'Semua',c:'#00E5FF'},{f:true,l:'Salah',c:'#EF4444'}].map(({f,l,c})=>(
+                  <button key={String(f)} onClick={()=>setFilterSalah(f)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all"
+                    style={{ background:filterSalah===f?`${c}22`:'#1E293B', color:filterSalah===f?c:'#64748B', border:filterSalah===f?`1px solid ${c}44`:'1px solid #2D3748' }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {soalList ? (
+            // ── Ada soal_list: tampil kartu soal yang bisa diklik ──
+            <div className="space-y-2">
+              {filtered.map((s) => {
+                const mc = getCfg(s.mapel);
+                const hasSnap = !!s.teks;
+                return (
+                  <button key={s._idx}
+                    onClick={() => hasSnap ? setSelSoal({...s, jawabanUser: s.jawabanUser ?? data.detail?.[s._idx]}) : null}
+                    disabled={!hasSnap}
+                    className="w-full text-left rounded-xl px-4 py-3 transition-all group"
+                    style={{
+                      background: s.isBenar===true ? 'rgba(16,185,129,0.05)' : s.isBenar===false ? 'rgba(239,68,68,0.05)' : '#0B1121',
+                      border: `1px solid ${s.isBenar===true?'rgba(16,185,129,0.2)':s.isBenar===false?'rgba(239,68,68,0.2)':'#1E293B'}`,
+                      cursor: hasSnap ? 'pointer' : 'default',
+                    }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ background:'#1E293B', color:'#64748B' }}>{s._idx+1}</span>
+                      <span className="text-xs font-bold" style={{ color:mc.color }}>{mc.labelUp}</span>
+                      <span className="ml-auto flex items-center gap-1 text-xs font-bold"
+                        style={{ color:s.isBenar===true?'#10B981':s.isBenar===false?'#EF4444':'#475569' }}>
+                        <MI name={s.isBenar===true?'check_circle':s.isBenar===false?'cancel':'help'} style={{fontSize:14}}/>
+                        {s.isBenar===true?'Benar':s.isBenar===false?'Salah':'—'}
+                      </span>
+                      {hasSnap && (
+                        <MI name="chevron_right" style={{ color:'#334155', fontSize:18, transition:'transform 0.2s' }}
+                          className="group-hover:translate-x-0.5"/>
+                      )}
+                    </div>
+                    {hasSnap && (
+                      <p className="text-xs leading-relaxed line-clamp-2" style={{ color:'#64748B' }}>
+                        <Latex text={s.teks}/>
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            // ── Tidak ada soal_list: tampil ringkasan angka saja ──
+            <div className="rounded-xl p-4" style={{ background:'#0B1121',border:'1px solid #1E293B' }}>
+              <p className="text-xs" style={{ color:'#475569' }}>
+                Skor: <strong style={{ color:sc(data.skor) }}>{data.skor}</strong> · {data.benar} benar · {data.salah} salah dari {jumlahSoal} soal
+              </p>
+              <p className="text-xs mt-2" style={{ color:'#334155' }}>
+                Detail soal tidak tersedia untuk tryout ini.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>, document.body
+  );
+  return (
+    <>
+      {portal}
+      {selSoal && (
+        <SoalDetailPanel
+          soal={selSoal}
+          jawabanUser={data.detail||{}}
+          onClose={()=>setSelSoal(null)}
+        />
+      )}
+    </>
   );
 }
 
