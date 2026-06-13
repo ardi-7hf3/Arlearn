@@ -394,6 +394,7 @@ function Alert({ show, tipe='info', judul, pesan, onOk, onYes, onNo, okLabel='OK
       </div>
     </div>, document.body
   );
+  return portal;
 }
 
 // ─── NAVBAR ───
