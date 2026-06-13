@@ -435,7 +435,7 @@ function Navbar({ page, setPage, userName, isAdmin, onLogout }) {
     </nav>
 
     {/* Mobile bottom nav */}
-    <div className="fixed bottom-0 left-0 right-0 sm:hidden z-50"
+    <div className="fixed bottom-0 left-0 right-0 sm:hidden z-40"
       style={{ background:'rgba(5,11,24,0.97)',borderTop:'1px solid rgba(255,255,255,0.06)',backdropFilter:'blur(24px)' }}>
       <div className="flex items-end h-16">
         {NAV.map(n => (
@@ -871,7 +871,7 @@ function ModalHasil({ show, soal, jawabanUser, onLagi, onRiwayat }) {
   const displaySoal = filterSalah ? soal.map((s,i)=>({...s,idx:i})).filter(s=>jawabanUser[s.idx]!==s.jawabanBenar) : soal.map((s,i)=>({...s,idx:i}));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-4 px-4" style={{ background:'rgba(0,0,0,0.88)',backdropFilter:'blur(12px)' }}>
+    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto py-4 px-4" style={{ background:'rgba(0,0,0,0.88)',backdropFilter:'blur(12px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden animate-fadeIn" style={{ background:'#111827',border:'1px solid rgba(0,229,255,0.15)',boxShadow:'0 24px 80px rgba(0,0,0,0.7)' }}>
         <div className="p-6 text-center" style={{ borderBottom:'1px solid #1E293B' }}>
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-3" style={{ background:`${sc}15`,border:`2px solid ${sc}35` }}>
@@ -1080,7 +1080,7 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
         </button>
       </div>
 
-      <div className="mt-2 mb-8">
+      <div className="mt-2 mb-24">
         {terjawab===total&&total>0 ? (
           <button onClick={()=>setAlert(true)} className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
             style={{ background:'linear-gradient(135deg,#F97316,#FB923C)',color:'#fff',boxShadow:'0 0 24px rgba(249,115,22,0.4)' }}>
@@ -1433,7 +1433,7 @@ export default function UserApp({ onNeedAdmin }) {
   return (
     <div className="min-h-screen" style={{ background:'#050B18' }}>
       <Navbar page={page} setPage={(p)=>{ if(p==='admin'&&isAdmin){ onNeedAdmin(); return; } if(p==='tryout')setFilter(null); setPage(p); }} userName={userName} isAdmin={isAdmin} onLogout={()=>setLogout(true)}/>
-      <main className="pt-14 pb-20 sm:pb-0">
+      <main className="pt-14 pb-24 sm:pb-0">
         {page==='tryout' && !filter && <BabSelectorPage userName={userName} onMulai={(f)=>{ setFilter(f); setPage('dashboard'); }}/>}
         {page==='dashboard' && filter && <DashboardTryout userId={userId} userName={userName} filter={filter} onBack={()=>{ setFilter(null); setPage('tryout'); }} onGoRiwayat={()=>setPage('riwayat')}/>}
         {page==='riwayat' && <RiwayatPage userId={userId}/>}

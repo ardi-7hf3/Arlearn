@@ -497,7 +497,7 @@ function TabSoal({ adminId, showToast }) {
     a.download = `soal_${mapel}_kelas${(kelas||'XI').toLowerCase()}.js`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`✅ ${data.length} soal berhasil diekspor!`);
+    showToast(`${data.length} soal berhasil diekspor!`);
   };
 
   const handleDeletePaket = async()=>{
