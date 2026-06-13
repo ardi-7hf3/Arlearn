@@ -1101,10 +1101,12 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
 // ─── RIWAYAT PAGE ───
 
 // ── Detail Soal Modal (slide dari bawah) ──
-function SoalDetailPanel({ soal, jawabanUser, onClose }) {
+function SoalDetailPanel({ soal, onClose }) {
   if (!soal) return null;
-  const idx       = soal._idx;
-  const isBenar   = jawabanUser[idx] === soal.jawabanBenar;
+  const idx         = soal._idx;
+  // _jawabanUser disisipkan langsung di object soal saat setSelSoal
+  const jawabanIdx  = soal._jawabanUser;
+  const isBenar     = jawabanIdx === soal.jawabanBenar;
   const mapelCfg  = getCfg(soal.mapel);
   return createPortal(
     <div style={{ position:'fixed',inset:0,zIndex:10000,display:'flex',flexDirection:'column',justifyContent:'flex-end',background:'rgba(0,0,0,0.75)',backdropFilter:'blur(8px)',animation:'alertFadeIn 0.18s ease both' }}
@@ -1148,7 +1150,7 @@ function SoalDetailPanel({ soal, jawabanUser, onClose }) {
         <div className="px-4 pb-4 space-y-2">
           {soal.pilihan.map((opt, j) => {
             const isK = j === soal.jawabanBenar;
-            const isP = j === jawabanUser[idx];
+            const isP = j === jawabanIdx;
             const isW = isP && !isK;
             let bg='#0B1121', border='#1E293B', txt='#94A3B8', lbg='#1E293B', lcol='#64748B';
             if (isK)      { bg='rgba(16,185,129,0.08)';  border='#10B981'; txt='#10B981'; lbg='rgba(16,185,129,0.2)';  lcol='#10B981'; }
@@ -1193,14 +1195,23 @@ function DetailModal({ show, data, onClose }) {
 
   // Soal yang tersimpan di data (jika ada field soal_snapshot) atau dari detail saja
   // Kita gunakan data.soal_list jika ada, fallback ke null (hanya tampil nomor)
-  const soalList = data.soal_list || null;
+  // soal_list dari Supabase JSONB — sudah auto-parse, tapi safety check
+  const soalList = Array.isArray(data.soal_list)
+    ? data.soal_list
+    : (typeof data.soal_list === 'string'
+        ? (() => { try { return JSON.parse(data.soal_list); } catch(e) { return null; } })()
+        : null);
   const jumlahSoal = data.total_soal || detailArr.length;
 
   // Build display list
+  // data.detail key bisa berupa string ("0","1",...) karena JSON parse dari Supabase
+  const detailNorm = {};
+  Object.entries(data.detail||{}).forEach(([k,v]) => { detailNorm[parseInt(k)] = v; });
+
   const displayItems = Array.from({ length: jumlahSoal }, (_, i) => {
     const snap = soalList ? soalList[i] : null;
-    const jawabanUser = data.detail?.[i];
-    const isBenar = snap ? jawabanUser === snap.jawabanBenar : null;
+    const jawabanUser = detailNorm[i];
+    const isBenar = snap != null && jawabanUser !== undefined ? jawabanUser === snap.jawabanBenar : null;
     return { _idx: i, jawabanUser, isBenar, ...(snap||{}) };
   });
 
@@ -1264,7 +1275,7 @@ function DetailModal({ show, data, onClose }) {
                 const hasSnap = !!s.teks;
                 return (
                   <button key={s._idx}
-                    onClick={() => hasSnap ? setSelSoal({...s, jawabanUser: s.jawabanUser ?? data.detail?.[s._idx]}) : null}
+                    onClick={() => hasSnap ? setSelSoal({...s, _jawabanUser: detailNorm[s._idx]}) : null}
                     disabled={!hasSnap}
                     className="w-full text-left rounded-xl px-4 py-3 transition-all group"
                     style={{
@@ -1316,7 +1327,6 @@ function DetailModal({ show, data, onClose }) {
       {selSoal && (
         <SoalDetailPanel
           soal={selSoal}
-          jawabanUser={data.detail||{}}
           onClose={()=>setSelSoal(null)}
         />
       )}

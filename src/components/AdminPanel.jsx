@@ -443,6 +443,63 @@ function TabSoal({ adminId, showToast }) {
     fetchPaket();
   };
 
+  const handleExportPaket = async(mapel, kelas) => {
+    showToast('Mengambil data soal...', 'info');
+    const { data, error } = await supabase
+      .from('soal')
+      .select('mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan,aktif')
+      .eq('mapel', mapel)
+      .eq('kelas', kelas || 'XI')
+      .order('bab')
+      .order('id');
+    if (error) { showToast(error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Tidak ada soal untuk diekspor.', 'error'); return; }
+
+    const cfg = getCfg(mapel);
+    const varName = `soal${cfg.label.replace(/\s+/g,'')}${(kelas||'XI').replace(/[^a-zA-Z0-9]/g,'')}`;
+
+    // Bangun konten JS
+    const lines = [];
+    lines.push(`// ARLearn — Export Paket Soal`);
+    lines.push(`// Mata Pelajaran : ${cfg.label}`);
+    lines.push(`// Kelas          : ${kelas||'XI'}`);
+    lines.push(`// Total Soal     : ${data.length}`);
+    lines.push(`// Diekspor pada  : ${new Date().toLocaleString('id-ID')}`);
+    lines.push('');
+    lines.push(`const ${varName} = [`);
+
+    data.forEach((s, i) => {
+      const pilihan = Array.isArray(s.pilihan) ? s.pilihan : JSON.parse(s.pilihan || '[]');
+      const pilihanStr = pilihan.map(p => `'${p.replace(/'/g, "\'")}'`).join(', ');
+      const teks = (s.teks || '').replace(/`/g, '\`').replace(/\\${/g, '\${');
+      const penj = (s.penjelasan || '').replace(/'/g, "\'");
+      const pemb = (s.pembahasan || '').replace(/`/g, '\`').replace(/\\${/g, '\${');
+      lines.push(`  {`);
+      lines.push(`    mapel: '${s.mapel}', kelas: '${kelas||'XI'}', bab: '${s.bab}',`);
+      lines.push(`    nama_bab: '${(s.nama_bab||'').replace(/'/g,"\'")}',`);
+      lines.push(`    teks: '${teks}',`);
+      lines.push(`    pilihan: [${pilihanStr}],`);
+      lines.push(`    jawabanBenar: ${s.jawaban_benar},`);
+      lines.push(`    penjelasan: '${penj}',`);
+      lines.push(`    pembahasan: \`${pemb}\`,`);
+      lines.push(`    aktif: ${s.aktif !== false},`);
+      lines.push(`  }${i < data.length - 1 ? ',' : ''}`);
+    });
+
+    lines.push(`];`);
+    lines.push('');
+    lines.push(`export default ${varName};`);
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/javascript' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `soal_${mapel}_kelas${(kelas||'XI').toLowerCase()}.js`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`✅ ${data.length} soal berhasil diekspor!`);
+  };
+
   const handleDeletePaket = async()=>{
     if(!delMapel) return;
     setSaving(true);
@@ -531,6 +588,12 @@ function TabSoal({ adminId, showToast }) {
                     className="flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                     style={{ background:cfg.color+'22', color:cfg.color, border:`1px solid ${cfg.color}44` }}>
                     <MI name="list_alt" style={{fontSize:14}}/>Lihat Soal
+                  </button>
+                  <button onClick={()=>handleExportPaket(p.mapel, p.kelas||'XI')}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+                    style={{ background:'rgba(34,197,94,0.1)', color:'#22C55E', border:'1px solid rgba(34,197,94,0.3)' }}
+                    title={`Export soal ${cfg.label} Kelas ${p.kelas||'XI'} ke .js`}>
+                    <MI name="download" style={{fontSize:16}}/>
                   </button>
                   <button onClick={()=>setDelMapel({mapel:p.mapel,kelas:p.kelas||'XI'})}
                     className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
