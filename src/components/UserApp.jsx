@@ -410,9 +410,7 @@ function Navbar({ page, setPage, userName, isAdmin, onLogout }) {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-14"
       style={{ background:'rgba(5,11,24,0.95)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)' }}>
-          <img src="/favicon.png" alt="AR" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-        </div>
+        <img src="/favicon.png" alt="AR" style={{ width:28, height:28, objectFit:'contain' }}/>
         <span className="font-black text-base logo-gradient">ARLearn</span>
       </div>
       <div className="hidden sm:flex items-center gap-1">
@@ -511,10 +509,7 @@ function LoginPage({ onLogin }) {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="relative inline-block mb-5">
-            <div className="absolute inset-0 rounded-3xl" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', filter:'blur(18px)', opacity:0.45, transform:'scale(1.1)' }}/>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl overflow-hidden" style={{ background:'linear-gradient(145deg,#00E5FF,#0284C7)', boxShadow:'0 8px 32px rgba(0,229,255,0.35), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
-              <img src="/favicon.png" alt="AR" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-            </div>
+            <img src="/favicon.png" alt="AR" style={{ width:80, height:80, objectFit:'contain' }}/>
           </div>
           <h1 className="font-black text-4xl logo-gradient mb-1.5" style={{ letterSpacing:'-1px' }}>ARLearn</h1>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background:'rgba(0,229,255,0.07)', border:'1px solid rgba(0,229,255,0.15)' }}>
