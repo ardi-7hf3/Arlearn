@@ -827,10 +827,36 @@ function TabLoginLogs() {
 
   const getUAInfo = (ua = '') => {
     if (!ua) return { icon: 'devices', label: '—' };
-    if (/iPhone|iPad/.test(ua))  return { icon: 'phone_iphone',  label: 'iOS · '     + (ua.match(/Safari\/[\d.]+/)                            || ['Safari'])[0]  };
-    if (/Android/.test(ua))      return { icon: 'phone_android', label: 'Android · ' + (ua.match(/Chrome\/[\d.]+/)                            || ['Chrome'])[0]  };
-    if (/Windows/.test(ua))      return { icon: 'computer',      label: 'Windows · ' + (ua.match(/Chrome\/[\d.]+|Firefox\/[\d.]+|Edg\/[\d.]+/) || ['Browser'])[0] };
-    if (/Mac/.test(ua))          return { icon: 'laptop_mac',    label: 'Mac · '     + (ua.match(/Chrome\/[\d.]+|Safari\/[\d.]+|Firefox\/[\d.]+/) || ['Browser'])[0] };
+
+    const browser =
+      (ua.match(/Edg\/([\d.]+)/)     && 'Edge/'     + ua.match(/Edg\/([\d.]+)/)[1])     ||
+      (ua.match(/OPR\/([\d.]+)/)     && 'Opera/'    + ua.match(/OPR\/([\d.]+)/)[1])     ||
+      (ua.match(/Firefox\/([\d.]+)/) && 'Firefox/'  + ua.match(/Firefox\/([\d.]+)/)[1]) ||
+      (ua.match(/Chrome\/([\d.]+)/)  && 'Chrome/'   + ua.match(/Chrome\/([\d.]+)/)[1])  ||
+      (ua.match(/Safari\/([\d.]+)/)  && 'Safari/'   + ua.match(/Safari\/([\d.]+)/)[1])  ||
+      'Browser';
+
+    // Android: ambil nama device dari user agent
+    if (/Android/.test(ua)) {
+      const deviceMatch = ua.match(/\(Linux; Android [\d.]+;\s*([^)]+?)\s*(Build|\))/);
+      const device = deviceMatch ? deviceMatch[1].trim() : '';
+      const label = device ? `Android · ${device} · ${browser}` : `Android · ${browser}`;
+      return { icon: 'phone_android', label };
+    }
+
+    // iPhone / iPad
+    if (/iPhone/.test(ua)) return { icon: 'phone_iphone', label: `iPhone · ${browser}` };
+    if (/iPad/.test(ua))   return { icon: 'phone_iphone', label: `iPad · ${browser}` };
+
+    // Windows
+    if (/Windows/.test(ua)) return { icon: 'computer', label: `Windows · ${browser}` };
+
+    // Mac
+    if (/Macintosh|Mac OS/.test(ua)) return { icon: 'laptop_mac', label: `Mac · ${browser}` };
+
+    // Linux desktop
+    if (/Linux/.test(ua)) return { icon: 'computer', label: `Linux · ${browser}` };
+
     return { icon: 'devices', label: ua.slice(0, 55) + '…' };
   };
 
