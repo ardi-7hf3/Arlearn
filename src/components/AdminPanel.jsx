@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 
 const MAPEL_LIST = [
   { value:'kimia',     label:'Kimia',        icon:'science',       color:'#F59E0B' },
-  { value:'fisika',    label:'Fisika',        icon:'atom',          color:'#00E5FF' },
+  { value:'fisika',    label:'Fisika',        icon:'bolt',          color:'#00E5FF' },
   { value:'mtkLanjut', label:'MTK Lanjut',   icon:'functions',     color:'#A78BFA' },
   { value:'mtkWajib',  label:'MTK Wajib',    icon:'calculate',     color:'#10B981' },
   { value:'pjok',      label:'PJOK',         icon:'fitness_center',color:'#F43F5E' },
@@ -825,13 +825,13 @@ function TabLoginLogs() {
     ? [...new Set(logs.map(l => l.ip_address).filter(Boolean))]
     : [];
 
-  const formatUA = (ua = '') => {
-    if (!ua) return '—';
-    if (/iPhone|iPad/.test(ua))  return '📱 iOS · ' + (ua.match(/Safari\/[\d.]+/) || ['Safari'])[0];
-    if (/Android/.test(ua))      return '📱 Android · ' + (ua.match(/Chrome\/[\d.]+/) || ['Chrome'])[0];
-    if (/Windows/.test(ua))      return '💻 Windows · ' + (ua.match(/Chrome\/[\d.]+|Firefox\/[\d.]+|Edg\/[\d.]+/) || ['Browser'])[0];
-    if (/Mac/.test(ua))          return '💻 Mac · ' + (ua.match(/Chrome\/[\d.]+|Safari\/[\d.]+|Firefox\/[\d.]+/) || ['Browser'])[0];
-    return ua.slice(0, 60) + '…';
+  const getUAInfo = (ua = '') => {
+    if (!ua) return { icon: 'devices', label: '—' };
+    if (/iPhone|iPad/.test(ua))  return { icon: 'phone_iphone',  label: 'iOS · '     + (ua.match(/Safari\/[\d.]+/)                            || ['Safari'])[0]  };
+    if (/Android/.test(ua))      return { icon: 'phone_android', label: 'Android · ' + (ua.match(/Chrome\/[\d.]+/)                            || ['Chrome'])[0]  };
+    if (/Windows/.test(ua))      return { icon: 'computer',      label: 'Windows · ' + (ua.match(/Chrome\/[\d.]+|Firefox\/[\d.]+|Edg\/[\d.]+/) || ['Browser'])[0] };
+    if (/Mac/.test(ua))          return { icon: 'laptop_mac',    label: 'Mac · '     + (ua.match(/Chrome\/[\d.]+|Safari\/[\d.]+|Firefox\/[\d.]+/) || ['Browser'])[0] };
+    return { icon: 'devices', label: ua.slice(0, 55) + '…' };
   };
 
   return (
@@ -925,7 +925,12 @@ function TabLoginLogs() {
                     {new Date(log.logged_in_at).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' })}
                   </td>
                   <td className="px-4 py-3 text-xs" style={{ color:'#475569', maxWidth:220 }}>
-                    <span className="truncate block">{formatUA(log.user_agent)}</span>
+                    {(() => { const ua = getUAInfo(log.user_agent); return (
+                      <span className="flex items-center gap-1.5 truncate">
+                        <MI name={ua.icon} style={{ fontSize:15, color:'#64748B', flexShrink:0 }}/>
+                        <span className="truncate">{ua.label}</span>
+                      </span>
+                    ); })()}
                   </td>
                 </tr>
               ))}

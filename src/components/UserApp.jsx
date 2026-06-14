@@ -11,7 +11,7 @@ import { InlineMath, BlockMath } from 'react-katex';
 
 const MAPEL_CFG = {
   kimia:     { label:'Kimia',      labelUp:'KIMIA',      icon:'science',      color:'#F59E0B', bg:'rgba(245,158,11,0.10)',  border:'rgba(245,158,11,0.25)',  glow:'rgba(245,158,11,0.15)'  },
-  fisika:    { label:'Fisika',     labelUp:'FISIKA',     icon:'atom',         color:'#00E5FF', bg:'rgba(0,229,255,0.10)',   border:'rgba(0,229,255,0.25)',   glow:'rgba(0,229,255,0.15)'   },
+  fisika:    { label:'Fisika',     labelUp:'FISIKA',     icon:'bolt',         color:'#00E5FF', bg:'rgba(0,229,255,0.10)',   border:'rgba(0,229,255,0.25)',   glow:'rgba(0,229,255,0.15)'   },
   mtkLanjut: { label:'MTK Lanjut',labelUp:'MTK LANJUT', icon:'functions',    color:'#A78BFA', bg:'rgba(167,139,250,0.10)', border:'rgba(167,139,250,0.25)', glow:'rgba(167,139,250,0.15)' },
   mtkWajib:  { label:'MTK Wajib', labelUp:'MTK WAJIB',  icon:'calculate',    color:'#10B981', bg:'rgba(16,185,129,0.10)',  border:'rgba(16,185,129,0.25)',  glow:'rgba(16,185,129,0.15)'  },
   pjok:      { label:'PJOK',      labelUp:'PJOK',       icon:'fitness_center',color:'#F43F5E', bg:'rgba(244,63,94,0.10)',   border:'rgba(244,63,94,0.25)',   glow:'rgba(244,63,94,0.15)'   },
