@@ -786,6 +786,21 @@ function TabLoginLogs() {
 
   const fetchLogs = useCallback(async (email = '') => {
     setLoading(true);
+
+    // Ambil email semua admin untuk di-exclude dari log
+    const { data: adminProfiles } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('role', 'admin');
+    const adminEmailList = (adminProfiles || []).map(p => p.email).filter(Boolean);
+
+    // Tambahkan email admin yang sedang login (fallback jika kolom email tidak ada di profiles)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentAdminEmail = sessionData?.session?.user?.email;
+    if (currentAdminEmail && !adminEmailList.includes(currentAdminEmail)) {
+      adminEmailList.push(currentAdminEmail);
+    }
+
     let q = supabase
       .from('login_logs')
       .select('*')
@@ -793,7 +808,10 @@ function TabLoginLogs() {
       .limit(200);
     if (email.trim()) q = q.ilike('user_email', `%${email.trim()}%`);
     const { data } = await q;
-    setLogs(data || []);
+
+    // Filter: jangan tampilkan log milik admin
+    const filtered = (data || []).filter(log => !adminEmailList.includes(log.user_email));
+    setLogs(filtered);
     setLoading(false);
   }, []);
 
@@ -881,7 +899,8 @@ function TabLoginLogs() {
         </div>
       ) : (
         <div className="rounded-xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
-          <table className="w-full text-sm">
+          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+          <table style={{ width:'100%', minWidth:600, fontSize:'0.875rem', borderCollapse:'collapse' }}>
             <thead>
               <tr style={{ background:'#0D1929' }}>
                 {['#','Email','IP Address','Waktu Login','Device / Browser'].map(h => (
@@ -912,6 +931,7 @@ function TabLoginLogs() {
               ))}
             </tbody>
           </table>
+          </div>
           <div className="px-4 py-2.5 flex items-center justify-between" style={{ background:'#0D1929', borderTop:'1px solid #1E3A5F' }}>
             <span className="text-xs" style={{ color:'#334155' }}>Menampilkan {logs.length} entri terbaru</span>
             <button onClick={() => fetchLogs(filterEmail)} className="text-xs flex items-center gap-1" style={{ color:'#475569' }}>
