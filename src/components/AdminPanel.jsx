@@ -777,6 +777,153 @@ function TabUsers({ showToast }) {
 }
 
 // ─── MAIN ADMIN PANEL ───
+// ─── TAB LOGIN LOGS ───
+function TabLoginLogs() {
+  const [logs, setLogs]         = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [filterEmail, setFilter]= useState('');
+  const [inputEmail, setInput]  = useState('');
+
+  const fetchLogs = useCallback(async (email = '') => {
+    setLoading(true);
+    let q = supabase
+      .from('login_logs')
+      .select('*')
+      .order('logged_in_at', { ascending: false })
+      .limit(200);
+    if (email.trim()) q = q.ilike('user_email', `%${email.trim()}%`);
+    const { data } = await q;
+    setLogs(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  const handleSearch = () => { setFilter(inputEmail); fetchLogs(inputEmail); };
+  const handleReset  = () => { setInput(''); setFilter(''); fetchLogs(''); };
+
+  // Hitung unique IP per email
+  const uniqueIPs = filterEmail
+    ? [...new Set(logs.map(l => l.ip_address).filter(Boolean))]
+    : [];
+
+  const formatUA = (ua = '') => {
+    if (!ua) return '—';
+    if (/iPhone|iPad/.test(ua))  return '📱 iOS · ' + (ua.match(/Safari\/[\d.]+/) || ['Safari'])[0];
+    if (/Android/.test(ua))      return '📱 Android · ' + (ua.match(/Chrome\/[\d.]+/) || ['Chrome'])[0];
+    if (/Windows/.test(ua))      return '💻 Windows · ' + (ua.match(/Chrome\/[\d.]+|Firefox\/[\d.]+|Edg\/[\d.]+/) || ['Browser'])[0];
+    if (/Mac/.test(ua))          return '💻 Mac · ' + (ua.match(/Chrome\/[\d.]+|Safari\/[\d.]+|Firefox\/[\d.]+/) || ['Browser'])[0];
+    return ua.slice(0, 60) + '…';
+  };
+
+  return (
+    <div>
+      {/* Search bar */}
+      <div className="flex gap-2 mb-5">
+        <div className="flex-1 relative">
+          <MI name="search" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569', fontSize:18, pointerEvents:'none' }}/>
+          <input
+            value={inputEmail}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            placeholder="Filter email user (contoh: user@arlearn.id)"
+            className="w-full py-2.5 rounded-xl text-sm outline-none"
+            style={{ paddingLeft:40, paddingRight:16, background:'#0A1628', border:'1px solid #1E3A5F', color:'#CBD5E1' }}
+          />
+        </div>
+        <button onClick={handleSearch}
+          className="px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5"
+          style={{ background:'#00E5FF', color:'#050B18' }}>
+          <MI name="search" style={{fontSize:15}}/>Cari
+        </button>
+        <button onClick={handleReset}
+          className="px-4 py-2 rounded-xl text-sm flex items-center gap-1.5"
+          style={{ background:'#1E3A5F33', color:'#64748B', border:'1px solid #1E3A5F44' }}>
+          <MI name="refresh" style={{fontSize:15}}/>Reset
+        </button>
+      </div>
+
+      {/* Summary saat filter aktif */}
+      {filterEmail && uniqueIPs.length > 0 && (
+        <div className="rounded-xl p-4 mb-4 flex flex-wrap gap-4 items-center"
+          style={{ background:'rgba(0,229,255,0.05)', border:'1px solid rgba(0,229,255,0.15)' }}>
+          <div>
+            <div className="text-xs font-bold mb-0.5" style={{ color:'#475569' }}>EMAIL</div>
+            <div className="text-sm font-bold" style={{ color:'#00E5FF' }}>{filterEmail}</div>
+          </div>
+          <div>
+            <div className="text-xs font-bold mb-0.5" style={{ color:'#475569' }}>TOTAL LOGIN</div>
+            <div className="text-sm font-bold" style={{ color:'#F0F6FF' }}>{logs.length}x</div>
+          </div>
+          <div>
+            <div className="text-xs font-bold mb-1" style={{ color:'#475569' }}>IP UNIK ({uniqueIPs.length})</div>
+            <div className="flex flex-wrap gap-1.5">
+              {uniqueIPs.map(ip => (
+                <span key={ip} className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold"
+                  style={{ background:'rgba(0,229,255,0.12)', color:'#00E5FF', border:'1px solid rgba(0,229,255,0.2)' }}>
+                  {ip}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabel log */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor:'#00E5FF', borderTopColor:'transparent' }}/>
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="text-center py-16 rounded-xl" style={{ background:'#0D1929', border:'1px dashed #1E3A5F' }}>
+          <MI name="manage_search" style={{ color:'#1E3A5F', fontSize:40, display:'block', margin:'0 auto 10px' }}/>
+          <p className="text-sm" style={{ color:'#334155' }}>Belum ada data login</p>
+        </div>
+      ) : (
+        <div className="rounded-xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background:'#0D1929' }}>
+                {['#','Email','IP Address','Waktu Login','Device / Browser'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide" style={{ color:'#475569', borderBottom:'1px solid #1E3A5F' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log, i) => (
+                <tr key={log.id} style={{ borderBottom:'1px solid rgba(30,58,95,0.4)', background: i%2===0 ? 'rgba(13,25,41,0.4)' : 'transparent' }}>
+                  <td className="px-4 py-3 text-xs" style={{ color:'#334155' }}>{i + 1}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-semibold" style={{ color:'#CBD5E1' }}>{log.user_email}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-1 rounded-lg text-xs font-mono font-bold"
+                      style={{ background:'rgba(0,229,255,0.08)', color:'#00E5FF', border:'1px solid rgba(0,229,255,0.15)' }}>
+                      {log.ip_address || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color:'#64748B' }}>
+                    {new Date(log.logged_in_at).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' })}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color:'#475569', maxWidth:220 }}>
+                    <span className="truncate block">{formatUA(log.user_agent)}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-4 py-2.5 flex items-center justify-between" style={{ background:'#0D1929', borderTop:'1px solid #1E3A5F' }}>
+            <span className="text-xs" style={{ color:'#334155' }}>Menampilkan {logs.length} entri terbaru</span>
+            <button onClick={() => fetchLogs(filterEmail)} className="text-xs flex items-center gap-1" style={{ color:'#475569' }}>
+              <MI name="refresh" style={{fontSize:13}}/>Refresh
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPanel({ onBack }) {
   const [profile, setProfile]   = useState(null);
   const [authLoad, setAuthLoad] = useState(true);
@@ -807,9 +954,10 @@ export default function AdminPanel({ onBack }) {
   };
 
   const TABS = [
-    { key:'soal',  label:'Kelola Paket', icon:'inventory_2' },
-    { key:'stats', label:'Statistik',   icon:'bar_chart'  },
-    { key:'users', label:'User',        icon:'group'      },
+    { key:'soal',       label:'Kelola Paket', icon:'inventory_2' },
+    { key:'stats',      label:'Statistik',    icon:'bar_chart'   },
+    { key:'users',      label:'User',         icon:'group'       },
+    { key:'login_logs', label:'Login Logs',   icon:'wifi_tethering' },
   ];
 
   if (authLoad) return <div className="min-h-screen flex items-center justify-center" style={{ background:'#050B18' }}><div className="w-12 h-12 rounded-full border-2 animate-spin" style={{ borderColor:'#00E5FF', borderTopColor:'transparent' }}/></div>;
@@ -859,9 +1007,10 @@ export default function AdminPanel({ onBack }) {
         <div className="flex gap-1 mb-6 p-1 rounded-xl w-fit" style={{ background:'#0D1929', border:'1px solid #1E3A5F' }}>
           {TABS.map(t=><button key={t.key} onClick={()=>setTab(t.key)} className="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5" style={{ background:tab===t.key?'#00E5FF':'transparent', color:tab===t.key?'#050B18':'#475569' }}><MI name={t.icon} style={{fontSize:15}}/>{t.label}</button>)}
         </div>
-        {tab==='soal'  && <TabSoal adminId={sessionId} showToast={showToast}/>}
-        {tab==='stats' && <TabStats/>}
-        {tab==='users' && <TabUsers showToast={showToast}/>}
+        {tab==='soal'       && <TabSoal adminId={sessionId} showToast={showToast}/>}
+        {tab==='stats'      && <TabStats/>}
+        {tab==='users'      && <TabUsers showToast={showToast}/>}
+        {tab==='login_logs' && <TabLoginLogs/>}
       </div>
     </div>
   );

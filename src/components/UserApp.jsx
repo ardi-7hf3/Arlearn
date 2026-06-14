@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
+import { logLoginActivity } from '../lib/loginLogger';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
@@ -475,6 +476,8 @@ function LoginPage({ onLogin }) {
     if (error) { setLoading(false); setAlert({ show:true, tipe:'error', judul:'Login Gagal', pesan:error.message }); return; }
     const { data: profile } = await supabase.from('profiles').select('display_name,role').eq('id', data.user.id).single();
     setLoading(false);
+    // Catat aktivitas login (IP, user agent) — non-blocking
+    logLoginActivity(data.user.email);
     onLogin(data.user.id, profile?.display_name || email.split('@')[0], profile?.role || 'user');
   };
 
