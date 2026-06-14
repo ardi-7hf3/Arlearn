@@ -480,123 +480,105 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background:'#050B18' }}>
+    <div style={{ minHeight:'100vh', background:'#05080F', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', position:'relative', overflow:'hidden' }}>
 
-      {/* ── Background layers ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* grid */}
-        <div className="absolute inset-0" style={{ backgroundImage:'linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px)', backgroundSize:'48px 48px' }}/>
-        {/* glows */}
-        <div className="absolute" style={{ top:'-15%', left:'-10%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(0,229,255,0.12),transparent 65%)', filter:'blur(40px)' }}/>
-        <div className="absolute" style={{ bottom:'-15%', right:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle,rgba(99,102,241,0.1),transparent 65%)', filter:'blur(40px)' }}/>
-        <div className="absolute" style={{ top:'40%', right:'15%', width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(249,115,22,0.07),transparent 65%)', filter:'blur(30px)' }}/>
-        {/* floating dots */}
-        {[
-          { top:'12%', left:'8%',  size:4,  op:0.35, dur:'6s'  },
-          { top:'22%', left:'88%', size:3,  op:0.25, dur:'8s'  },
-          { top:'65%', left:'5%',  size:5,  op:0.2,  dur:'7s'  },
-          { top:'75%', left:'90%', size:3,  op:0.3,  dur:'9s'  },
-          { top:'45%', left:'92%', size:2,  op:0.2,  dur:'5s'  },
-          { top:'88%', left:'20%', size:4,  op:0.25, dur:'10s' },
-        ].map((d,i)=>(
-          <div key={i} className="absolute rounded-full login-float" style={{ top:d.top, left:d.left, width:d.size, height:d.size, background:`rgba(0,229,255,${d.op})`, animationDuration:d.dur }}/>
-        ))}
+      {/* ── BG: satu glow besar di tengah atas, bukan banyak dekorasi ── */}
+      <div style={{ position:'absolute', top:'-20%', left:'50%', transform:'translateX(-50%)', width:600, height:600, borderRadius:'50%', background:'radial-gradient(circle, rgba(0,180,220,0.07) 0%, transparent 70%)', pointerEvents:'none' }}/>
+      {/* garis tipis horizontal aksen bawah logo */}
+      <div style={{ position:'absolute', top:'38%', left:0, right:0, height:1, background:'linear-gradient(90deg, transparent, rgba(0,229,255,0.06), transparent)', pointerEvents:'none' }}/>
+
+      {/* ── LOGO AREA ── */}
+      <div className="animate-fadeIn" style={{ textAlign:'center', marginBottom:40, position:'relative', zIndex:1 }}>
+        <img src="/favicon.png" alt="ARLearn" style={{ width:110, height:110, objectFit:'contain', marginBottom:20, filter:'drop-shadow(0 0 24px rgba(0,229,255,0.25))' }}/>
+        <div style={{ fontSize:'2rem', fontWeight:900, letterSpacing:'-0.04em', color:'#F0F8FF', lineHeight:1, marginBottom:8 }}>
+          AR<span style={{ color:'#00C8E8' }}>Learn</span>
+        </div>
+        <div style={{ fontSize:'0.72rem', fontWeight:600, letterSpacing:'0.18em', color:'#2A4A6B', textTransform:'uppercase' }}>
+          Platform Tryout · XI ARTERI
+        </div>
       </div>
 
-      {/* ── Card ── */}
-      <div className="w-full max-w-[400px] animate-fadeIn" style={{ position:'relative', zIndex:1 }}>
+      {/* ── FORM ── */}
+      <div className="animate-fadeIn" style={{ width:'100%', maxWidth:380, position:'relative', zIndex:1 }}>
 
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="relative inline-block mb-5">
-            <img src="/favicon.png" alt="AR" style={{ width:80, height:80, objectFit:'contain' }}/>
-          </div>
-          <h1 className="font-black text-4xl logo-gradient mb-1.5" style={{ letterSpacing:'-1px' }}>ARLearn</h1>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background:'rgba(0,229,255,0.07)', border:'1px solid rgba(0,229,255,0.15)' }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background:'#10B981', boxShadow:'0 0 6px #10B981' }}/>
-            <span className="text-xs font-semibold" style={{ color:'#64748B' }}>Platform Tryout · XI ARTERI</span>
+        {/* Email */}
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.12em', color: focusEmail ? '#00C8E8' : '#2A4A6B', marginBottom:8, transition:'color 0.2s', textTransform:'uppercase' }}>Email</div>
+          <div style={{ position:'relative' }}>
+            <input
+              type="email" value={email}
+              onChange={e=>setEmail(e.target.value)}
+              onFocus={()=>setFocusEmail(true)}
+              onBlur={()=>setFocusEmail(false)}
+              onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+              placeholder="email@arlearn.id"
+              style={{
+                width:'100%', boxSizing:'border-box',
+                padding:'14px 16px 14px 46px',
+                background: focusEmail ? 'rgba(0,200,232,0.04)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${focusEmail ? 'rgba(0,200,232,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                borderRadius:14, fontSize:'0.9rem', color:'#E2EBF0',
+                outline:'none', transition:'all 0.2s',
+              }}
+            />
+            <MI name="alternate_email" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:17, color: focusEmail ? '#00C8E8' : '#2A4A6B', transition:'color 0.2s', pointerEvents:'none' }}/>
           </div>
         </div>
 
-        {/* Form card */}
-        <div className="rounded-3xl overflow-hidden" style={{ background:'linear-gradient(160deg,#0D1929,#0A1222)', border:'1px solid rgba(0,229,255,0.12)', boxShadow:'0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(0,229,255,0.08)' }}>
-
-          {/* Top accent bar */}
-          <div style={{ height:2, background:'linear-gradient(90deg,transparent,#00E5FF,#38BDF8,transparent)' }}/>
-
-          <div className="p-7 space-y-5">
-
-            {/* Email field */}
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: focusEmail ? '#00E5FF' : '#475569', transition:'color 0.2s' }}>
-                <MI name="alternate_email" style={{ fontSize:13 }}/>EMAIL
-              </label>
-              <div className="relative">
-                <input
-                  type="email" value={email}
-                  onChange={e=>setEmail(e.target.value)}
-                  onFocus={()=>setFocusEmail(true)}
-                  onBlur={()=>setFocusEmail(false)}
-                  onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-                  placeholder="email@arlearn.id"
-                  className="w-full rounded-2xl text-sm outline-none transition-all"
-                  style={{ padding:'13px 16px 13px 44px', background:'rgba(10,22,40,0.8)', border:`1.5px solid ${focusEmail?'rgba(0,229,255,0.5)':'rgba(30,58,95,0.8)'}`, color:'#E2E8F0', boxShadow: focusEmail?'0 0 16px rgba(0,229,255,0.1)':'none' }}
-                />
-                <MI name="alternate_email" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:18, color: focusEmail?'#00E5FF':'#334155', transition:'color 0.2s', pointerEvents:'none' }}/>
-              </div>
-            </div>
-
-            {/* Password field */}
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: focusPass ? '#00E5FF' : '#475569', transition:'color 0.2s' }}>
-                <MI name="lock" style={{ fontSize:13 }}/>PASSWORD
-              </label>
-              <div className="relative">
-                <input
-                  type={showPass?'text':'password'} value={pass}
-                  onChange={e=>setPass(e.target.value)}
-                  onFocus={()=>setFocusPass(true)}
-                  onBlur={()=>setFocusPass(false)}
-                  onKeyDown={e=>e.key==='Enter'&&handleLogin()}
-                  placeholder="••••••••"
-                  className="w-full rounded-2xl text-sm outline-none transition-all"
-                  style={{ padding:'13px 50px 13px 44px', background:'rgba(10,22,40,0.8)', border:`1.5px solid ${focusPass?'rgba(0,229,255,0.5)':'rgba(30,58,95,0.8)'}`, color:'#E2E8F0', boxShadow: focusPass?'0 0 16px rgba(0,229,255,0.1)':'none' }}
-                />
-                {/* lock icon kiri */}
-                <MI name="lock" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:18, color: focusPass?'#00E5FF':'#334155', transition:'color 0.2s', pointerEvents:'none' }}/>
-                {/* toggle icon kanan — fix posisi tengah */}
-                <button
-                  onClick={()=>setShowPass(s=>!s)}
-                  style={{ position:'absolute', right:0, top:0, bottom:0, width:48, display:'flex', alignItems:'center', justifyContent:'center', color: showPass?'#00E5FF':'#475569', transition:'color 0.2s', background:'transparent', border:'none', cursor:'pointer' }}
-                >
-                  <MI name={showPass?'visibility':'visibility_off'} style={{ fontSize:20, display:'block' }}/>
-                </button>
-              </div>
-            </div>
-
-            {/* Login button */}
-            <button
-              onClick={handleLogin} disabled={loading}
-              className="w-full rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all"
-              style={{ padding:'14px', background: loading ? 'rgba(0,229,255,0.15)' : 'linear-gradient(135deg,#00E5FF,#0284C7)', color: loading ? '#00E5FF' : '#050B18', boxShadow: loading ? 'none' : '0 0 28px rgba(0,229,255,0.3), 0 4px 16px rgba(0,0,0,0.4)', transform: loading ? 'none' : 'translateY(0)', opacity: loading ? 0.8 : 1, border: loading ? '1.5px solid rgba(0,229,255,0.3)' : 'none' }}
-            >
-              {loading
-                ? <><div style={{ width:16, height:16, border:'2px solid rgba(0,229,255,0.4)', borderTopColor:'#00E5FF', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/><span>Sedang Masuk...</span></>
-                : <><MI name="rocket_launch" style={{ fontSize:18 }}/><span>Masuk</span></>
-              }
+        {/* Password */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.12em', color: focusPass ? '#00C8E8' : '#2A4A6B', marginBottom:8, transition:'color 0.2s', textTransform:'uppercase' }}>Password</div>
+          <div style={{ position:'relative' }}>
+            <input
+              type={showPass?'text':'password'} value={pass}
+              onChange={e=>setPass(e.target.value)}
+              onFocus={()=>setFocusPass(true)}
+              onBlur={()=>setFocusPass(false)}
+              onKeyDown={e=>e.key==='Enter'&&handleLogin()}
+              placeholder="••••••••"
+              style={{
+                width:'100%', boxSizing:'border-box',
+                padding:'14px 50px 14px 46px',
+                background: focusPass ? 'rgba(0,200,232,0.04)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${focusPass ? 'rgba(0,200,232,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                borderRadius:14, fontSize:'0.9rem', color:'#E2EBF0',
+                outline:'none', transition:'all 0.2s',
+              }}
+            />
+            <MI name="lock" style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:17, color: focusPass ? '#00C8E8' : '#2A4A6B', transition:'color 0.2s', pointerEvents:'none' }}/>
+            <button onClick={()=>setShowPass(s=>!s)}
+              style={{ position:'absolute', right:0, top:0, bottom:0, width:46, display:'flex', alignItems:'center', justifyContent:'center', background:'transparent', border:'none', cursor:'pointer', color: showPass ? '#00C8E8' : '#2A4A6B', transition:'color 0.2s' }}>
+              <MI name={showPass?'visibility':'visibility_off'} style={{ fontSize:19 }}/>
             </button>
-
-          </div>
-
-          {/* Footer card */}
-          <div className="px-7 pb-5 flex items-center justify-center gap-2">
-            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
-            <span className="text-xs px-3" style={{ color:'#1E3A5F' }}>XI ARTERI 2026/2027</span>
-            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.05)' }}/>
           </div>
         </div>
 
+        {/* Tombol masuk */}
+        <button
+          onClick={handleLogin} disabled={loading}
+          style={{
+            width:'100%', padding:'15px', borderRadius:14,
+            background: loading ? 'rgba(0,200,232,0.08)' : '#00C8E8',
+            border: loading ? '1px solid rgba(0,200,232,0.2)' : 'none',
+            color: loading ? '#00C8E8' : '#05080F',
+            fontSize:'0.95rem', fontWeight:800, letterSpacing:'0.02em',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+            transition:'all 0.2s', opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading
+            ? <><div style={{ width:16, height:16, border:'2px solid rgba(0,200,232,0.3)', borderTopColor:'#00C8E8', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/><span>Masuk...</span></>
+            : <span>Masuk</span>
+          }
+        </button>
+
+        {/* Footer */}
+        <div style={{ textAlign:'center', marginTop:32, fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.14em', color:'#151E2B', textTransform:'uppercase' }}>
+          XI ARTERI · 2026 / 2027
+        </div>
       </div>
+
       <Alert {...alert} onOk={()=>setAlert({show:false})}/>
     </div>
   );
