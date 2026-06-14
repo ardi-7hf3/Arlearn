@@ -991,8 +991,8 @@ export default function AdminPanel({ onBack }) {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background:'#050B18' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', boxShadow:'0 0 30px rgba(0,229,255,0.3)' }}>
-            <span className="font-black text-2xl" style={{ color:'#050B18' }}>AR</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 overflow-hidden" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', boxShadow:'0 0 30px rgba(0,229,255,0.3)' }}>
+            <img src="/favicon.png" alt="AR" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
           </div>
           <h1 className="text-2xl font-black" style={{ color:'#E2E8F0' }}>Admin Panel</h1>
           <p className="text-sm mt-1" style={{ color:'#475569' }}>ARLearn · Kelola Soal & User</p>
@@ -1020,7 +1020,9 @@ export default function AdminPanel({ onBack }) {
       <nav className="sticky top-0 z-40 flex items-center justify-between px-6 py-3" style={{ background:'rgba(5,11,24,0.95)', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E3A5F' }}>
         <div className="flex items-center gap-3">
           {onBack&&<button onClick={onBack} className="text-sm px-3 py-1.5 rounded-lg flex items-center gap-1" style={{ background:'#1E3A5F33', color:'#64748B' }}><MI name="arrow_back" style={{fontSize:14}}/>App</button>}
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)', color:'#050B18' }}>AR</div>
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center" style={{ background:'linear-gradient(135deg,#00E5FF,#0891B2)' }}>
+            <img src="/favicon.png" alt="AR" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+          </div>
           <span className="font-bold text-sm" style={{ color:'#E2E8F0' }}>ARLearn <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background:'#00E5FF22', color:'#00E5FF' }}>ADMIN</span></span>
         </div>
         <div className="flex items-center gap-3">
