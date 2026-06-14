@@ -488,17 +488,15 @@ function LoginPage({ onLogin }) {
       <div style={{ position:'absolute', top:'38%', left:0, right:0, height:1, background:'linear-gradient(90deg, transparent, rgba(0,229,255,0.06), transparent)', pointerEvents:'none' }}/>
 
       {/* ── LOGO AREA ── */}
-      <div className="animate-fadeIn" style={{ width:'100%', maxWidth:380, marginBottom:40, position:'relative', zIndex:1 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:10 }}>
+      <div className="animate-fadeIn" style={{ width:'100%', maxWidth:380, marginBottom:40, position:'relative', zIndex:1, display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:8 }}>
           <img src="/favicon.png" alt="ARLearn" style={{ width:64, height:64, objectFit:'contain', filter:'drop-shadow(0 0 16px rgba(0,229,255,0.3))', flexShrink:0 }}/>
-          <div>
-            <div style={{ fontSize:'1.9rem', fontWeight:900, letterSpacing:'-0.04em', color:'#F0F8FF', lineHeight:1, marginBottom:4 }}>
-              AR<span style={{ color:'#00C8E8' }}>Learn</span>
-            </div>
-            <div style={{ fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.16em', color:'#2A4A6B', textTransform:'uppercase' }}>
-              Platform Tryout · XI ARTERI
-            </div>
+          <div style={{ fontSize:'1.9rem', fontWeight:900, letterSpacing:'-0.04em', color:'#F0F8FF', lineHeight:1 }}>
+            AR<span style={{ color:'#00C8E8' }}>Learn</span>
           </div>
+        </div>
+        <div style={{ fontSize:'0.65rem', fontWeight:600, letterSpacing:'0.16em', color:'#2A4A6B', textTransform:'uppercase' }}>
+          Platform Tryout · XI ARTERI
         </div>
       </div>
 
