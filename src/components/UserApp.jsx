@@ -10,12 +10,22 @@ import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
 const MAPEL_CFG = {
-  kimia:     { label:'Kimia',      labelUp:'KIMIA',      icon:'science',      color:'#F59E0B', bg:'rgba(245,158,11,0.10)',  border:'rgba(245,158,11,0.25)',  glow:'rgba(245,158,11,0.15)'  },
-  fisika:    { label:'Fisika',     labelUp:'FISIKA',     icon:'bolt',         color:'#00E5FF', bg:'rgba(0,229,255,0.10)',   border:'rgba(0,229,255,0.25)',   glow:'rgba(0,229,255,0.15)'   },
-  mtkLanjut: { label:'MTK Lanjut',labelUp:'MTK LANJUT', icon:'functions',    color:'#A78BFA', bg:'rgba(167,139,250,0.10)', border:'rgba(167,139,250,0.25)', glow:'rgba(167,139,250,0.15)' },
-  mtkWajib:  { label:'MTK Wajib', labelUp:'MTK WAJIB',  icon:'calculate',    color:'#10B981', bg:'rgba(16,185,129,0.10)',  border:'rgba(16,185,129,0.25)',  glow:'rgba(16,185,129,0.15)'  },
-  pjok:      { label:'PJOK',      labelUp:'PJOK',       icon:'fitness_center',color:'#F43F5E', bg:'rgba(244,63,94,0.10)',   border:'rgba(244,63,94,0.25)',   glow:'rgba(244,63,94,0.15)'   },
-  default:   { label:'Lainnya',   labelUp:'UMUM',       icon:'menu_book',    color:'#94A3B8', bg:'rgba(148,163,184,0.08)', border:'rgba(148,163,184,0.20)', glow:'rgba(148,163,184,0.10)' },
+  // ── Mapel Sekolah ──────────────────────────────────────────────────
+  kimia:     { label:'Kimia',      labelUp:'KIMIA',      icon:'science',        color:'#F59E0B', bg:'rgba(245,158,11,0.10)',  border:'rgba(245,158,11,0.25)',  glow:'rgba(245,158,11,0.15)'  },
+  fisika:    { label:'Fisika',     labelUp:'FISIKA',     icon:'bolt',           color:'#00E5FF', bg:'rgba(0,229,255,0.10)',   border:'rgba(0,229,255,0.25)',   glow:'rgba(0,229,255,0.15)'   },
+  mtkLanjut: { label:'MTK Lanjut',labelUp:'MTK LANJUT', icon:'functions',      color:'#A78BFA', bg:'rgba(167,139,250,0.10)', border:'rgba(167,139,250,0.25)', glow:'rgba(167,139,250,0.15)' },
+  mtkWajib:  { label:'MTK Wajib', labelUp:'MTK WAJIB',  icon:'calculate',      color:'#10B981', bg:'rgba(16,185,129,0.10)',  border:'rgba(16,185,129,0.25)',  glow:'rgba(16,185,129,0.15)'  },
+  pjok:      { label:'PJOK',      labelUp:'PJOK',       icon:'fitness_center', color:'#F43F5E', bg:'rgba(244,63,94,0.10)',   border:'rgba(244,63,94,0.25)',   glow:'rgba(244,63,94,0.15)'   },
+  // ── SNBT / UTBK ────────────────────────────────────────────────────
+  pk:        { label:'Penalaran Kuantitatif',  labelUp:'PK',  icon:'data_usage',       color:'#06B6D4', bg:'rgba(6,182,212,0.10)',   border:'rgba(6,182,212,0.25)',   glow:'rgba(6,182,212,0.15)'   },
+  pm:        { label:'Penalaran Matematika',   labelUp:'PM',  icon:'equalizer',        color:'#8B5CF6', bg:'rgba(139,92,246,0.10)',  border:'rgba(139,92,246,0.25)',  glow:'rgba(139,92,246,0.15)'  },
+  pu:        { label:'Penalaran Umum',         labelUp:'PU',  icon:'psychology',       color:'#F59E0B', bg:'rgba(245,158,11,0.10)',  border:'rgba(245,158,11,0.25)',  glow:'rgba(245,158,11,0.15)'  },
+  ppu:       { label:'Pengetahuan & Pem. Umum',labelUp:'PPU', icon:'public',           color:'#10B981', bg:'rgba(16,185,129,0.10)',  border:'rgba(16,185,129,0.25)',  glow:'rgba(16,185,129,0.15)'  },
+  pbm:       { label:'Pem. Bacaan & Menulis',  labelUp:'PBM', icon:'menu_book',        color:'#EC4899', bg:'rgba(236,72,153,0.10)',  border:'rgba(236,72,153,0.25)',  glow:'rgba(236,72,153,0.15)'  },
+  lbi:       { label:'Literasi Bahasa Indonesia',labelUp:'LBI',icon:'translate',       color:'#EF4444', bg:'rgba(239,68,68,0.10)',   border:'rgba(239,68,68,0.25)',   glow:'rgba(239,68,68,0.15)'   },
+  lbe:       { label:'Literasi Bahasa Inggris', labelUp:'LBE',icon:'language',         color:'#3B82F6', bg:'rgba(59,130,246,0.10)',  border:'rgba(59,130,246,0.25)',  glow:'rgba(59,130,246,0.15)'  },
+  // ── Default ────────────────────────────────────────────────────────
+  default:   { label:'Lainnya',   labelUp:'UMUM',       icon:'menu_book',      color:'#94A3B8', bg:'rgba(148,163,184,0.08)', border:'rgba(148,163,184,0.20)', glow:'rgba(148,163,184,0.10)' },
 };
 const getCfg = (mapel) => MAPEL_CFG[mapel] || MAPEL_CFG.default;
 const OPTS = ['A','B','C','D'];
@@ -596,7 +606,8 @@ function BabSelectorPage({ userName, onMulai }) {
   const [selMapel, setSelMapel] = useState(null);  // mapel yang dipilih (string)
   const [selKelas, setSelKelas] = useState(null);  // kelas yang dipilih ('XI','XII',dst)
   const [selBab,   setSelBab]   = useState(null);
-  const [dropOpen, setDropOpen] = useState(false); // dropdown mapel
+  const [dropOpen,  setDropOpen]  = useState(false); // dropdown mapel sekolah
+  const [dropOpen2, setDropOpen2] = useState(false); // dropdown sub tes UTBK
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
@@ -613,7 +624,11 @@ function BabSelectorPage({ userName, onMulai }) {
     });
   }, []);
 
-  const mapelList = Object.keys(bankData); // ['kimia','fisika',...]
+  const SNBT_KEYS   = ['pk','pm','pu','ppu','pbm','lbi','lbe'];
+  const mapelList   = Object.keys(bankData);
+  const SEKOLAH_KEYS = ['kimia','fisika','mtkLanjut','mtkWajib','pjok'];
+  const mapelSekolah = mapelList.filter(m => SEKOLAH_KEYS.includes(m));
+  const mapelSNBT    = mapelList.filter(m => SNBT_KEYS.includes(m));
 
   // Kelas yang ada untuk mapel terpilih
   const kelasAda  = selMapel ? Object.keys(bankData[selMapel] || {}).sort() : [];
@@ -628,7 +643,14 @@ function BabSelectorPage({ userName, onMulai }) {
   const cfg = selMapel ? getCfg(selMapel) : null;
 
   const handleSelMapel = (mapel) => {
-    setSelMapel(mapel); setSelKelas(null); setSelBab(null); setDropOpen(false);
+    setSelMapel(mapel); setSelBab(null);
+    setDropOpen(false); setDropOpen2(false);
+    // Sub tes UTBK tidak perlu pilih kelas — langsung set 'UTBK'
+    if (SNBT_KEYS.includes(mapel)) {
+      setSelKelas('UTBK');
+    } else {
+      setSelKelas(null);
+    }
   };
 
   if (loading) return (
@@ -647,55 +669,56 @@ function BabSelectorPage({ userName, onMulai }) {
         <p className="text-sm mt-1" style={{ color:'#475569' }}>Pilih mata pelajaran, kelas, dan bab untuk tryout</p>
       </div>
 
-      {/* ── STEP 1: DROPDOWN MATA PELAJARAN ── */}
+      {/* ── STEP 1: DUA DROPDOWN TERPISAH ── */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
             style={{ background:'linear-gradient(135deg,#F97316,#FB923C)',color:'#fff' }}>1</span>
-          <span className="text-sm font-semibold" style={{ color:'#94A3B8' }}>Pilih Mata Pelajaran</span>
+          <span className="text-sm font-semibold" style={{ color:'#94A3B8' }}>Pilih Mata Pelajaran / Sub Tes</span>
         </div>
 
-        {/* Dropdown trigger */}
-        <div className="relative">
-          <button onClick={()=>setDropOpen(o=>!o)}
+        {/* ── Dropdown 1: Mata Pelajaran Sekolah ── */}
+        <div className="relative mb-3">
+          <button onClick={()=>{ setDropOpen(o=>!o); setDropOpen2(false); }}
             className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all"
-            style={{ background: selMapel ? getCfg(selMapel).bg : '#111827', border:`1.5px solid ${selMapel ? getCfg(selMapel).color : '#1E293B'}`, boxShadow: selMapel ? `0 0 20px ${getCfg(selMapel).glow}` : 'none' }}>
-            {selMapel ? (
+            style={{ background: (selMapel && SEKOLAH_KEYS.includes(selMapel)) ? getCfg(selMapel).bg : '#111827', border:`1.5px solid ${(selMapel && SEKOLAH_KEYS.includes(selMapel)) ? getCfg(selMapel).color : '#1E293B'}`, boxShadow:(selMapel && SEKOLAH_KEYS.includes(selMapel)) ? `0 0 20px ${getCfg(selMapel).glow}` : 'none' }}>
+            {(selMapel && SEKOLAH_KEYS.includes(selMapel)) ? (
               <>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: getCfg(selMapel).bg, border:`1px solid ${getCfg(selMapel).border}` }}>
+                  style={{ background:getCfg(selMapel).bg, border:`1px solid ${getCfg(selMapel).border}` }}>
                   <MI name={getCfg(selMapel).icon} style={{ color:getCfg(selMapel).color, fontSize:20 }}/>
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="font-bold text-sm" style={{ color: getCfg(selMapel).color }}>{getCfg(selMapel).label}</div>
+                  <div className="font-bold text-sm" style={{ color:getCfg(selMapel).color }}>{getCfg(selMapel).label}</div>
                   <div className="text-xs" style={{ color:'#475569' }}>{totalMapel} soal tersedia</div>
                 </div>
               </>
             ) : (
               <>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:'#1E293B' }}>
-                  <MI name="menu_book" style={{ color:'#475569', fontSize:20 }}/>
+                  <MI name="school" style={{ color:'#475569', fontSize:20 }}/>
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="text-sm" style={{ color:'#64748B' }}>Pilih mata pelajaran...</div>
+                  <div className="text-xs font-bold uppercase tracking-wide" style={{ color:'#334155' }}>Mata Pelajaran Sekolah</div>
+                  <div className="text-sm" style={{ color:'#64748B' }}>Kimia, Fisika, MTK, PJOK...</div>
                 </div>
               </>
             )}
             <MI name={dropOpen?'expand_less':'expand_more'} style={{ color:'#64748B', fontSize:22, flexShrink:0 }}/>
           </button>
 
-          {/* Dropdown menu */}
           {dropOpen && (
             <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-20"
               style={{ background:'#0D1929', border:'1px solid #1E3A5F', boxShadow:'0 16px 48px rgba(0,0,0,0.7)' }}>
-              {mapelList.map(mapel => {
+              {/* Ada soal */}
+              {mapelSekolah.map(mapel => {
                 const mc = getCfg(mapel);
                 const tot = Object.values(bankData[mapel]||{}).flatMap(k=>Object.values(k)).reduce((a,b)=>a+b.jumlah,0);
                 const klsAda = Object.keys(bankData[mapel]||{}).sort().join(', ');
                 return (
                   <button key={mapel} onClick={()=>handleSelMapel(mapel)}
                     className="w-full flex items-center gap-3 px-4 py-3.5 transition-all"
-                    style={{ background: selMapel===mapel ? mc.bg : 'transparent', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                    style={{ background:selMapel===mapel?mc.bg:'transparent', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ background:mc.bg, border:`1px solid ${mc.border}` }}>
                       <MI name={mc.icon} style={{ color:mc.color, fontSize:20 }}/>
@@ -704,18 +727,91 @@ function BabSelectorPage({ userName, onMulai }) {
                       <div className="font-bold text-sm" style={{ color:mc.color }}>{mc.label}</div>
                       <div className="text-xs" style={{ color:'#475569' }}>Kelas {klsAda} · {tot} soal</div>
                     </div>
-                    {selMapel===mapel && <MI name="check_circle" style={{ color:mc.color, fontSize:18, flexShrink:0 }}/>}
+                    {selMapel===mapel && <MI name="check_circle" style={{ color:mc.color, fontSize:18 }}/>}
                   </button>
                 );
               })}
-              {/* Siluet mapel yang belum ada soal */}
-              {Object.keys(MAPEL_CFG).filter(m=>m!=='default'&&!mapelList.includes(m)).map(mapel => {
+              {/* Belum ada soal */}
+              {SEKOLAH_KEYS.filter(m=>!mapelSekolah.includes(m)).map(mapel => {
                 const mc = getCfg(mapel);
                 return (
                   <div key={mapel} className="flex items-center gap-3 px-4 py-3.5 opacity-30"
                     style={{ borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'not-allowed' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:'#1E293B', border:'1px solid #2D3748' }}>
+                      <MI name={mc.icon} style={{ color:'#334155', fontSize:20 }}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-sm" style={{ color:'#334155' }}>{mc.label}</div>
+                      <div className="text-xs" style={{ color:'#1E293B' }}>Belum ada soal</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Dropdown 2: Sub Tes UTBK ── */}
+        <div className="relative">
+          <button onClick={()=>{ setDropOpen2(o=>!o); setDropOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all"
+            style={{ background:(selMapel && SNBT_KEYS.includes(selMapel)) ? getCfg(selMapel).bg : '#111827', border:`1.5px solid ${(selMapel && SNBT_KEYS.includes(selMapel)) ? getCfg(selMapel).color : '#1E293B'}`, boxShadow:(selMapel && SNBT_KEYS.includes(selMapel)) ? `0 0 20px ${getCfg(selMapel).glow}` : 'none' }}>
+            {(selMapel && SNBT_KEYS.includes(selMapel)) ? (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background:getCfg(selMapel).bg, border:`1px solid ${getCfg(selMapel).border}` }}>
+                  <MI name={getCfg(selMapel).icon} style={{ color:getCfg(selMapel).color, fontSize:20 }}/>
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="font-bold text-sm" style={{ color:getCfg(selMapel).color }}>{getCfg(selMapel).label}</div>
+                  <div className="text-xs" style={{ color:'#475569' }}>{totalMapel} soal tersedia</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:'#1E293B' }}>
+                  <MI name="fact_check" style={{ color:'#475569', fontSize:20 }}/>
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="text-xs font-bold uppercase tracking-wide" style={{ color:'#334155' }}>Sub Tes UTBK / SNBT</div>
+                  <div className="text-sm" style={{ color:'#64748B' }}>PK, PM, PU, PPU, PBM, LBI, LBE...</div>
+                </div>
+              </>
+            )}
+            <MI name={dropOpen2?'expand_less':'expand_more'} style={{ color:'#64748B', fontSize:22, flexShrink:0 }}/>
+          </button>
+
+          {dropOpen2 && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-20"
+              style={{ background:'#0D1929', border:'1px solid #1E3A5F', boxShadow:'0 16px 48px rgba(0,0,0,0.7)' }}>
+              {/* Ada soal */}
+              {mapelSNBT.map(mapel => {
+                const mc = getCfg(mapel);
+                const tot = Object.values(bankData[mapel]||{}).flatMap(k=>Object.values(k)).reduce((a,b)=>a+b.jumlah,0);
+                const klsAda = Object.keys(bankData[mapel]||{}).sort().join(', ');
+                return (
+                  <button key={mapel} onClick={()=>handleSelMapel(mapel)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 transition-all"
+                    style={{ background:selMapel===mapel?mc.bg:'transparent', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background:'#1E293B', border:'1px solid #2D3748' }}>
+                      style={{ background:mc.bg, border:`1px solid ${mc.border}` }}>
+                      <MI name={mc.icon} style={{ color:mc.color, fontSize:20 }}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-sm" style={{ color:mc.color }}>{mc.label}</div>
+                      <div className="text-xs" style={{ color:'#475569' }}>{tot} soal</div>
+                    </div>
+                    {selMapel===mapel && <MI name="check_circle" style={{ color:mc.color, fontSize:18 }}/>}
+                  </button>
+                );
+              })}
+              {/* Belum ada soal */}
+              {SNBT_KEYS.filter(m=>!mapelSNBT.includes(m)).map(mapel => {
+                const mc = getCfg(mapel);
+                return (
+                  <div key={mapel} className="flex items-center gap-3 px-4 py-3.5 opacity-30"
+                    style={{ borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'not-allowed' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:'#1E293B', border:'1px solid #2D3748' }}>
                       <MI name={mc.icon} style={{ color:'#334155', fontSize:20 }}/>
                     </div>
                     <div className="flex-1 text-left">
@@ -730,7 +826,8 @@ function BabSelectorPage({ userName, onMulai }) {
         </div>
       </div>
 
-      {/* ── STEP 2: PILIH KELAS ── */}
+      {/* ── STEP 2: PILIH KELAS — hanya untuk mapel sekolah ── */}
+      {(!selMapel || !['pk','pm','pu','ppu','pbm','lbi','lbe'].includes(selMapel)) && (
       <div className={`mb-6 transition-all duration-300 ${selMapel?'opacity-100':'opacity-40 pointer-events-none'}`}>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
@@ -782,6 +879,8 @@ function BabSelectorPage({ userName, onMulai }) {
           })}
         </div>
       </div>
+
+      )}
 
       {/* ── STEP 3: PILIH BAB ── */}
       <div className={`mb-6 transition-all duration-300 ${selKelas?'opacity-100':'opacity-40 pointer-events-none'}`}>

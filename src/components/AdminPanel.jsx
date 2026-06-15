@@ -6,11 +6,20 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const MAPEL_LIST = [
-  { value:'kimia',     label:'Kimia',        icon:'science',       color:'#F59E0B' },
-  { value:'fisika',    label:'Fisika',        icon:'bolt',          color:'#00E5FF' },
-  { value:'mtkLanjut', label:'MTK Lanjut',   icon:'functions',     color:'#A78BFA' },
-  { value:'mtkWajib',  label:'MTK Wajib',    icon:'calculate',     color:'#10B981' },
-  { value:'pjok',      label:'PJOK',         icon:'fitness_center',color:'#F43F5E' },
+  // ── Mapel Sekolah ──────────────────────────────
+  { value:'kimia',     label:'Kimia',                       icon:'science',        color:'#F59E0B' },
+  { value:'fisika',    label:'Fisika',                      icon:'bolt',           color:'#00E5FF' },
+  { value:'mtkLanjut', label:'MTK Lanjut',                 icon:'functions',      color:'#A78BFA' },
+  { value:'mtkWajib',  label:'MTK Wajib',                  icon:'calculate',      color:'#10B981' },
+  { value:'pjok',      label:'PJOK',                       icon:'fitness_center', color:'#F43F5E' },
+  // ── SNBT / UTBK ────────────────────────────────
+  { value:'pk',        label:'Penalaran Kuantitatif',       icon:'data_usage',     color:'#06B6D4' },
+  { value:'pm',        label:'Penalaran Matematika',        icon:'equalizer',      color:'#8B5CF6' },
+  { value:'pu',        label:'Penalaran Umum',              icon:'psychology',     color:'#F59E0B' },
+  { value:'ppu',       label:'Pengetahuan & Pemahaman Umum',icon:'public',         color:'#10B981' },
+  { value:'pbm',       label:'Pemahaman Bacaan & Menulis',  icon:'menu_book',      color:'#EC4899' },
+  { value:'lbi',       label:'Literasi Bahasa Indonesia',   icon:'translate',      color:'#EF4444' },
+  { value:'lbe',       label:'Literasi Bahasa Inggris',     icon:'language',       color:'#3B82F6' },
   { value:'default',   label:'Umum/Default', icon:'menu_book',     color:'#94A3B8' },
 ];
 const BLANK = { mapel:'kimia', kelas:'XI', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', gambar:null, aktif:true };
@@ -483,6 +492,7 @@ function TabSoal({ adminId, showToast }) {
       lines.push(`    penjelasan: '${penj}',`);
       lines.push(`    pembahasan: \`${pemb}\`,`);
       lines.push(`    aktif: ${s.aktif !== false},`);
+      if (s.gambar) lines.push(`    gambar: '${s.gambar}',`);
       lines.push(`  }${i < data.length - 1 ? ',' : ''}`);
     });
 
