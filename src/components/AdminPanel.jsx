@@ -13,7 +13,7 @@ const MAPEL_LIST = [
   { value:'pjok',      label:'PJOK',         icon:'fitness_center',color:'#F43F5E' },
   { value:'default',   label:'Umum/Default', icon:'menu_book',     color:'#94A3B8' },
 ];
-const BLANK = { mapel:'kimia', kelas:'XI', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', aktif:true };
+const BLANK = { mapel:'kimia', kelas:'XI', bab:'bab1', nama_bab:'', teks:'', pilihan:['','','',''], jawaban_benar:0, penjelasan:'', pembahasan:'', gambar:null, aktif:true };
 const getCfg = (v) => MAPEL_LIST.find(x=>x.value===v) || MAPEL_LIST[5];
 const PER_PAGE = 20;
 
@@ -208,7 +208,7 @@ function ImportModal({ open, onClose, onImport, saving }) {
   const totalSoal = files.reduce((a,f)=>a+(f.preview?.length||0),0);
   const doImport = () => {
     const all = files.flatMap(f=>f.preview||[]);
-    onImport(all.map(s=>({ mapel:s.mapel||'default', kelas:s.kelas||'XI', bab:s.bab||'bab1', nama_bab:s.namaBab||s.nama_bab||'', teks:s.teks||'', pilihan:Array.isArray(s.pilihan)?s.pilihan:[], jawaban_benar:s.jawabanBenar??s.jawaban_benar??0, penjelasan:s.penjelasan||'', pembahasan:s.pembahasan||'', aktif:true })));
+    onImport(all.map(s=>({ mapel:s.mapel||'default', kelas:s.kelas||'XI', bab:s.bab||'bab1', nama_bab:s.namaBab||s.nama_bab||'', teks:s.teks||'', pilihan:Array.isArray(s.pilihan)?s.pilihan:[], jawaban_benar:s.jawabanBenar??s.jawaban_benar??0, penjelasan:s.penjelasan||'', pembahasan:s.pembahasan||'', gambar:s.gambar||null, aktif:true })));
   };
 
   if (!open) return null;
@@ -447,7 +447,7 @@ function TabSoal({ adminId, showToast }) {
     showToast('Mengambil data soal...', 'info');
     const { data, error } = await supabase
       .from('soal')
-      .select('mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan,aktif')
+      .select('mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan,gambar,aktif')
       .eq('mapel', mapel)
       .eq('kelas', kelas || 'XI')
       .order('bab')

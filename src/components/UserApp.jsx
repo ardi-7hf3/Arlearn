@@ -27,7 +27,7 @@ const MI = ({ name, style, className }) => (
 
 async function fetchSoal(mapel = null, kelas = null, bab = null) {
   let q = supabase.from('soal')
-    .select('id,mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan')
+    .select('id,mapel,kelas,bab,nama_bab,teks,pilihan,jawaban_benar,penjelasan,pembahasan,gambar')
     .eq('aktif', true);
   if (mapel) q = q.eq('mapel', mapel);
   if (kelas) q = q.eq('kelas', kelas);
@@ -35,7 +35,7 @@ async function fetchSoal(mapel = null, kelas = null, bab = null) {
   const { data } = await q.order('id');
   return (data || []).map(s => ({
     id: s.id, mapel: s.mapel, kelas: s.kelas || 'XI', bab: s.bab, namaBab: s.nama_bab,
-    teks: s.teks, pilihan: Array.isArray(s.pilihan) ? s.pilihan : JSON.parse(s.pilihan || '[]'),
+    teks: s.teks, pilihan: Array.isArray(s.pilihan) ? s.pilihan : JSON.parse(s.pilihan || '[]'), gambar: s.gambar || null,
     jawabanBenar: s.jawaban_benar, penjelasan: s.penjelasan, pembahasan: s.pembahasan,
   }));
 }
@@ -911,6 +911,11 @@ function ModalHasil({ show, soal, jawabanUser, onLagi, onRiwayat }) {
                       <span className="ml-auto"><MI name={isB?'check_circle':'cancel'} style={{ color:isB?'#10B981':'#EF4444', fontSize:18 }}/></span>
                     </div>
                     <div className="text-sm mb-2" style={{ color:'#D1D5DB' }}><Latex text={s.teks}/></div>
+                    {s.gambar && (
+                      <div className="mt-2 mb-2 rounded-xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
+                        <img src={s.gambar} alt="Gambar soal" style={{ width:'100%', display:'block', borderRadius:10 }}/>
+                      </div>
+                    )}
                     {s.pilihan.map((opt,j)=>{ const isK=j===s.jawabanBenar; const isP=j===jawabanUser[i]; let col=isK?'#10B981':isP&&!isK?'#EF4444':'#475569';
                       return (<div key={j} className="flex items-start gap-2 mt-1 text-xs py-0.5" style={{ color:col }}><span className="font-bold w-5 flex-shrink-0">{OPTS[j]}.</span><span className="flex-1"><Latex text={opt}/></span>{isK&&<MI name="check" style={{fontSize:14}}/>}{isP&&!isK&&<MI name="close" style={{fontSize:14}}/>}</div>);
                     })}
@@ -1029,6 +1034,11 @@ function DashboardTryout({ userId, userName, filter, onBack, onGoRiwayat }) {
         </div>
         <div className="px-5 pt-5 pb-4">
           <div className="font-semibold text-base sm:text-lg leading-relaxed text-center" style={{ color:'#F0F6FF',minHeight:80 }}><Latex text={soal.teks}/></div>
+          {soal.gambar && (
+            <div className="mt-3 rounded-xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
+              <img src={soal.gambar} alt="Gambar soal" style={{ width:'100%', display:'block', borderRadius:12 }}/>
+            </div>
+          )}
         </div>
         <div className="px-4 pb-4 space-y-2.5">
           {soal.pilihan.map((opt,j)=>{
@@ -1126,6 +1136,11 @@ function SoalDetailPanel({ soal, onClose }) {
         <div className="px-5 py-4">
           <div className="font-semibold text-base leading-relaxed" style={{ color:'#F0F6FF' }}>
             <Latex text={soal.teks}/>
+            {soal.gambar && (
+              <div className="mt-3 rounded-xl overflow-hidden" style={{ border:'1px solid #1E3A5F' }}>
+                <img src={soal.gambar} alt="Gambar soal" style={{ width:'100%', display:'block', borderRadius:10 }}/>
+              </div>
+            )}
           </div>
         </div>
 
