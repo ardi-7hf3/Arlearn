@@ -18,12 +18,15 @@ const soalNamaMapel = [
 export default soalNamaMapel;
 ```
 
-### Nama variabel berdasarkan kelas:
-| Kelas | Nama Variabel |
-|---|---|
-| XI | `soalKimia` |
-| XII | `soalKimia12` |
-| Kelas lain | `soal[MapelKelas]` (contoh: `soalFisika11`) |
+### Nama variabel berdasarkan mapel & kelas:
+| Mapel | Kelas | Nama Variabel |
+|---|---|---|
+| Kimia | XI | `soalKimia` |
+| Kimia | XII | `soalKimia12` |
+| Fisika | XI | `soalFisika` |
+| PK UTBK | UTBK | `soalPKUTBK2025` |
+| PM UTBK | UTBK | `soalPMDay1` |
+| dst. | UTBK | `soal[SubTes][Paket]` |
 
 ---
 
@@ -31,24 +34,81 @@ export default soalNamaMapel;
 
 ```js
 {
-  mapel: 'kimia',           // string: nama mata pelajaran (huruf kecil)
-  kelas: 'XI',              // string: 'X' | 'XI' | 'XII' — WAJIB agar tidak campur antar kelas
-  bab: 'bab1',              // string: 'bab1' | 'bab2' | 'bab3' | 'bab4' | 'bab5' | dst.
-  nama_bab: 'Nama Bab',     // string: nama bab lengkap (ditampilkan di UI)
-  teks: '...',              // string: teks soal (boleh multiline dengan \n)
+  mapel: 'kimia',           // string: kode mapel (lihat tabel mapel di bawah)
+  kelas: 'XI',              // string: 'X' | 'XI' | 'XII' | 'UTBK'
+  bab: 'bab1',              // string: 'bab1' | 'bab2' | dst.
+  nama_bab: 'Nama Bab',     // string: nama bab/paket (ditampilkan di UI)
+  teks: '...',              // string: teks soal
   pilihan: ['A','B','C','D'], // array TEPAT 4 string
   jawabanBenar: 0,          // integer: INDEX jawaban benar (0=A, 1=B, 2=C, 3=D)
   penjelasan: '...',        // string: penjelasan SINGKAT (1–3 kalimat)
   pembahasan: `...`,        // template literal: pembahasan LENGKAP dengan tag
+  gambar: null,             // string | null: base64 image 'data:image/jpeg;base64,...'
 }
 ```
 
-> ⚠️ **WAJIB**: `pilihan` selalu berisi tepat **4 elemen**. `jawabanBenar` adalah **index (0–3)**, bukan teks jawaban.
-> ⚠️ **WAJIB**: `kelas` harus diisi agar soal kelas XI dan XII tidak bergabung di Admin Panel.
+> ⚠️ **WAJIB**: `pilihan` selalu berisi tepat **4 elemen**. `jawabanBenar` adalah **index (0–3)**.
+> ⚠️ **WAJIB**: `kelas` harus diisi agar soal tidak bergabung antar paket di Admin Panel.
 
 ---
 
-## 3. ATURAN `jawabanBenar` (INDEX)
+## 3. TABEL KODE MAPEL
+
+### 3a. Mata Pelajaran Sekolah → dropdown "Mata Pelajaran Sekolah"
+
+| Kode `mapel` | Label UI | Kelas yang valid |
+|---|---|---|
+| `kimia` | Kimia | X, XI, XII |
+| `fisika` | Fisika | X, XI, XII |
+| `mtkLanjut` | MTK Lanjut | X, XI, XII |
+| `mtkWajib` | MTK Wajib | X, XI, XII |
+| `pjok` | PJOK | X, XI, XII |
+
+### 3b. Sub Tes UTBK/SNBT → dropdown "Sub Tes UTBK / SNBT"
+
+| Kode `mapel` | Label UI | Kelas WAJIB | Keterangan |
+|---|---|---|---|
+| `pk` | Penalaran Kuantitatif | `UTBK` | Matematika/logika numerik |
+| `pm` | Penalaran Matematika | `UTBK` | Aljabar, geometri, statistika |
+| `pu` | Penalaran Umum | `UTBK` | Logika verbal & analitis |
+| `ppu` | Pengetahuan & Pemahaman Umum | `UTBK` | IPA, IPS, sains umum |
+| `pbm` | Pemahaman Bacaan & Menulis | `UTBK` | Teks bahasa Indonesia |
+| `lbi` | Literasi Bahasa Indonesia | `UTBK` | Membaca & menulis Bahasa Indonesia |
+| `lbe` | Literasi Bahasa Inggris | `UTBK` | Reading & writing English |
+
+> ⚠️ **WAJIB untuk UTBK**: Semua sub tes SNBT **harus** menggunakan `kelas: 'UTBK'` agar muncul di dropdown Sub Tes dan tombol kelas UTBK aktif.
+
+---
+
+## 4. SISTEM PENOMORAN BAB
+
+### Mapel Sekolah:
+```
+Kelas XI:  kelas: 'XI'
+  bab1 → Topik 1
+  bab2 → Topik 2
+
+Kelas XII: kelas: 'XII'
+  bab4 → Topik 4  (lanjut dari kelas XI, tidak mulai dari bab1 lagi)
+  bab5 → Topik 5
+```
+
+### Sub Tes UTBK:
+```
+kelas: 'UTBK'  (selalu untuk semua sub tes SNBT)
+  bab1 → Paket 1 / Day 1 / Sesi 1
+  bab2 → Paket 2 / Day 1 Sesi 2
+  bab3 → Paket 3 / Day 2
+  dst.
+```
+
+> nama_bab untuk UTBK sebaiknya deskriptif, contoh:
+> `'PK UTBK 2025 — Penalaran Kuantitatif'`
+> `'PM Day 2 — Penalaran Matematika'`
+
+---
+
+## 5. ATURAN `jawabanBenar` (INDEX)
 
 ```
 pilihan: ['$1$', '$2$', '$3$', '$4$']
@@ -60,25 +120,11 @@ pilihan: ['$1$', '$2$', '$3$', '$4$']
 2. Cocokkan hasil perhitungan dengan pilihan di array
 3. Isi `jawabanBenar` dengan **index** pilihan yang cocok
 
-### Contoh BENAR:
-```js
-// HCl 0.01M → pH = -log(10^-2) = 2
-pilihan: ['$1$', '$2$', '$3$', '$4$'],
-jawabanBenar: 1,  // index 1 = '$2$' ✓
-```
-
-### Contoh SALAH:
-```js
-// SALAH: hasil hitung 0.372 tapi idx=0 yang isinya 0.186
-pilihan: ['$0{,}186$', '$0{,}372$', '$0{,}93$', '$1{,}86$'],
-jawabanBenar: 0,  // ❌ SALAH — 0.186 ≠ hasil hitung
-```
-
 ---
 
-## 4. FORMAT LaTeX
+## 6. FORMAT LaTeX
 
-### 4a. Penulisan dalam string biasa (`'...'`)
+### 6a. Penulisan dalam string biasa (`'...'`)
 Gunakan **double backslash** `\\` untuk semua perintah LaTeX:
 
 ```js
@@ -86,172 +132,68 @@ teks: 'Hitunglah pH larutan $\\text{HCl}$ $0{,}01$ M!',
 penjelasan: '$[\\text{H}^+] = 10^{-2}$ M, maka $\\text{pH} = 2$.',
 ```
 
-### 4b. Penulisan dalam template literal (`` `...` ``)
-Gunakan **double backslash** `\\` juga (sama seperti string biasa):
+### 6b. Penulisan dalam template literal (`` `...` ``)
+Gunakan **double backslash** `\\` juga:
 
 ```js
 pembahasan: `[RUMUS] $\\text{pH} = -\\log[\\text{H}^+]$
 [HASIL] $\\text{pH} = 2$`,
 ```
 
-### 4c. Aturan desimal — gunakan `{,}` bukan `.`
+### 6c. Aturan desimal — gunakan `{,}` bukan `.`
 ```js
-// BENAR (standar Indonesia):
-'$0{,}05$ M'    // tampil: 0,05 M
-'$1{,}86$'      // tampil: 1,86
-
-// SALAH:
-'$0.05$ M'      // tampil: 0.05 M (bukan standar Indonesia)
-```
-
-### 4d. Notasi variabel kimia yang benar
-
-| Variabel | Penulisan LaTeX | Tampilan |
-|---|---|---|
-| Konsentrasi asam lemah | `$M_a$` | $M_a$ |
-| Konsentrasi basa lemah | `$M_b$` | $M_b$ |
-| Konsentrasi ion H⁺ | `$[\\text{H}^+]$` | $[\text{H}^+]$ |
-| Konsentrasi ion OH⁻ | `$[\\text{OH}^-]$` | $[\text{OH}^-]$ |
-| Konstanta asam | `$K_a$` | $K_a$ |
-| Konstanta basa | `$K_b$` | $K_b$ |
-| Konstanta air | `$K_w$` | $K_w$ |
-| Konstanta laju | `$k$` (huruf kecil) | $k$ |
-| Konstanta kesetimbangan | `$K_c$` atau `$K_p$` | $K_c$, $K_p$ |
-| Perubahan entalpi | `$\\Delta H$` | $\Delta H$ |
-| Energi aktivasi | `$E_a$` | $E_a$ |
-| Derajat ionisasi | `$\\alpha$` | $\alpha$ |
-| Faktor Van't Hoff | `$i$` (huruf kecil) | $i$ |
-| Penurunan titik beku | `$\\Delta T_f$` | $\Delta T_f$ |
-| Kenaikan titik didih | `$\\Delta T_b$` | $\Delta T_b$ |
-| Tekanan osmotik | `$\\pi$` | $\pi$ |
-| Molalitas | `$m$` (huruf kecil) | $m$ |
-| Molaritas | `$M$` (huruf kapital) | $M$ |
-
-> ⚠️ **JANGAN** gunakan variabel `C` atau `c` untuk konsentrasi. Gunakan `M_a` (asam), `M_b` (basa), atau `M` (molaritas umum).
-
-### 4e. Penulisan nama zat kimia
-```js
-// BENAR — gunakan \text{} untuk nama zat
-'$\\text{NaOH}$'          // NaOH
-'$\\text{CH}_3\\text{COOH}$'  // CH₃COOH
-'$\\text{H}_2\\text{O}$'  // H₂O
-
-// SALAH — tanpa \text{}
-'$NaOH$'   // tampil miring: NaOH
+'$0{,}05$ M'    // ✅ tampil: 0,05 M
+'$0.05$ M'      // ❌ tampil: 0.05 M
 ```
 
 ---
 
-## 5. TAG PEMBAHASAN LENGKAP
+## 7. TAG PEMBAHASAN LENGKAP
 
-Field `pembahasan` menggunakan **template literal** dan mendukung 4 tag khusus yang dirender sebagai blok visual berwarna di aplikasi.
-
-### 5a. Daftar tag
+Field `pembahasan` menggunakan **template literal** dan mendukung 4 tag khusus:
 
 | Tag | Warna | Fungsi |
 |---|---|---|
-| `[RUMUS] ...` | 🟡 Kuning | Kotak rumus dasar — tulis **satu** rumus utama yang digunakan |
-| `[LANGKAH] ...` | 🟠 Oranye | Langkah bernomor otomatis — identifikasi/setup masalah |
-| `[INSTRUKSI] ...` | 🟣 Ungu | Badge operasi — substitusikan, kalikan, bagikan, hitung, dll. |
-| `[HASIL] ...` | 🟢 Hijau | Kotak hasil akhir — **wajib ada di setiap soal** |
+| `[RUMUS] ...` | 🟡 Kuning | Rumus dasar yang digunakan |
+| `[LANGKAH] ...` | 🟠 Oranye | Setup/identifikasi masalah |
+| `[INSTRUKSI] ...` | 🟣 Ungu | Operasi/kalkulasi |
+| `[HASIL] ...` | 🟢 Hijau | Hasil akhir — **wajib ada** |
 
-### 5b. Struktur urutan yang benar
-
+### Struktur urutan:
 ```
-[RUMUS]     → rumus dasar yang digunakan
-[LANGKAH]   → identifikasi data / setup (boleh lebih dari 1)
+[RUMUS]     → rumus dasar
+[LANGKAH]   → identifikasi data
 [INSTRUKSI] → operasi pertama
-              formula/kalkulasi
 [INSTRUKSI] → operasi kedua
-              formula/kalkulasi
 [HASIL]     → jawaban akhir
 ```
 
-### 5c. Aturan penting tag
-
-1. **[RUMUS]** — hanya SATU per soal, letakkan di paling atas
-2. **[LANGKAH]** — boleh 1–3, untuk setup/identifikasi data
-3. **[INSTRUKSI]** — selalu diikuti baris formula/kalkulasi di bawahnya
-4. **[HASIL]** — wajib ada, selalu di paling bawah
-5. Baris tanpa tag tapi berisi LaTeX `$...$` → ditampilkan rata tengah sebagai formula
-6. Baris tanpa tag, bukan LaTeX → teks keterangan biasa (abu-abu)
-7. Baris kosong → spasi vertikal kecil
-
-### 5d. Kata kunci instruksi yang dikenali otomatis (tanpa tag)
-Jika baris dimulai dengan salah satu kata berikut, akan otomatis diberi badge `↳`:
-`substitusikan`, `kalikan`, `bagikan`, `jumlahkan`, `kurangkan`, `hitung`, `tentukan`, `ubah`, `gunakan`, `masukkan`, `bandingkan`, `sederhanakan`, `bagi`, `kali`, `tambah`, `kurang`, `cari`, `konversikan`, `tulis`, `perhatikan`, `ingat`, `catatan`
-
 ---
 
-## 6. ATURAN `penjelasan` (SINGKAT)
+## 8. FIELD `gambar` (OPSIONAL)
 
-- Panjang: **1–3 kalimat**
-- Format: string biasa `'...'` (bukan template literal)
-- Isi: rangkuman perhitungan langsung ke jawaban
-- LaTeX: double backslash `\\`
-- Tidak boleh mengandung kontradiksi dengan `pembahasan`
+Untuk soal yang memiliki gambar/diagram/grafik:
 
 ```js
-// BENAR:
-penjelasan: '$[\\text{H}^+] = \\sqrt{K_a \\times M_a} = \\sqrt{10^{-5} \\times 0{,}1} = 10^{-3}$ M, maka $\\text{pH} = 3$.',
+// Soal dengan gambar (base64)
+{
+  ...
+  gambar: 'data:image/jpeg;base64,/9j/4AAQ...', // base64 string
+}
 
-// SALAH — kontradiksi (hitung A tapi simpulkan B):
-penjelasan: '$[\\text{H}^+] \\approx 1{,}68 \\times 10^{-2}$ M... untuk soal ini pH $\\approx 3{,}5$.',
-// ❌ 1.68×10^-2 → pH=1.77, bukan 3.5!
+// Soal tanpa gambar
+{
+  ...
+  gambar: null,  // atau tidak perlu ditulis sama sekali
+}
 ```
+
+> Gambar biasanya adalah screenshot halaman PDF soal yang di-encode ke base64.
+> Tampil otomatis di bawah teks soal saat tryout dan di review hasil.
 
 ---
 
-## 7. VALIDASI MATEMATIS WAJIB
-
-Sebelum menyimpan soal, verifikasi:
-
-### Checklist per soal:
-- [ ] Hitung jawaban secara manual/matematis
-- [ ] `jawabanBenar` menunjuk ke index yang nilainya = hasil hitung
-- [ ] `penjelasan` konsisten dengan `pembahasan`
-- [ ] `[HASIL]` di pembahasan konsisten dengan `jawabanBenar`
-- [ ] Tidak ada kontradiksi antara perhitungan di tengah dan hasil akhir
-- [ ] Variabel LaTeX benar (`M_a`/`M_b` bukan `C`, `k` kecil untuk laju, `K_c` besar untuk kesetimbangan)
-
-### Rumus yang sering salah:
-
-```
-❌ [H+] = sqrt(Ka × C)     → SALAH
-✅ [H+] = sqrt(Ka × Ma)    → BENAR
-
-❌ k = 3/(0.01^2 × 0.02) = 750   → SALAH (= 1.5×10^6)
-✅ Hitung ulang: k = v/([A]^n[B]^m)
-
-❌ ΔTf = Kf × m = 1.86 × 0.2 = 0.186   → SALAH
-✅ ΔTf = 1.86 × 0.2 = 0.372             → BENAR
-
-❌ [HI] = 1.4 M padahal x=7/9=0.778, [HI]=2x=1.556  → SALAH
-✅ [HI] = 1.56 M → pilihan idx=2                      → BENAR
-```
-
----
-
-## 8. SISTEM PENOMORAN BAB
-
-```
-Kelas XI:  kelas: 'XI'
-  bab1 → Topik 1 (misal: pH Larutan Asam Basa)
-  bab2 → Topik 2 (misal: Perubahan Entalpi)
-  bab3 → Topik 3 (misal: Orde Reaksi & Laju)
-
-Kelas XII: kelas: 'XII'
-  bab4 → Topik 4 (misal: Sifat Koligatif Larutan)
-  bab5 → Topik 5 (misal: Kesetimbangan Kimia Lanjutan)
-  bab6 → Topik 6 (dst.)
-```
-
-> Penomoran bab bersifat **global** dan berlanjut antar kelas agar tidak bentrok di database.
-> Field `kelas` adalah yang memisahkan tampilan paket di Admin Panel — tanpanya semua soal kimia akan gabung jadi satu kartu.
-
----
-
-## 9. CONTOH SOAL LENGKAP (BENAR)
+## 9. CONTOH SOAL MAPEL SEKOLAH (KIMIA)
 
 ```js
 {
@@ -260,86 +202,175 @@ Kelas XII: kelas: 'XII'
   teks: 'Hitunglah pH larutan $\\text{NaOH}$ $0{,}001$ M!',
   pilihan: ['$11$', '$12$', '$13$', '$3$'],
   jawabanBenar: 0,
-  // Verifikasi: [OH-]=10^-3, pOH=3, pH=14-3=11 → index 0 = '$11$' ✓
-  penjelasan: '$\\text{NaOH}$ basa kuat, $[\\text{OH}^-] = 10^{-3}$ M, $\\text{pOH} = 3$, maka $\\text{pH} = 14 - 3 = 11$.',
-  pembahasan: `[RUMUS] $\\text{pH} = 14 - \\text{pOH}$ dan $\\text{pOH} = -\\log[\\text{OH}^-]$
-[LANGKAH] Tuliskan reaksi ionisasi $\\text{NaOH}$ (basa kuat, ionisasi sempurna)
+  penjelasan: '$[\\text{OH}^-] = 10^{-3}$ M, $\\text{pOH} = 3$, maka $\\text{pH} = 11$.',
+  pembahasan: `[RUMUS] $\\text{pH} = 14 - \\text{pOH}$
+[LANGKAH] NaOH basa kuat, ionisasi sempurna
 $\\text{NaOH} \\rightarrow \\text{Na}^+ + \\text{OH}^-$
-[INSTRUKSI] Tentukan konsentrasi ion $\\text{OH}^-$
-$[\\text{OH}^-] = 0{,}001 \\text{ M} = 10^{-3} \\text{ M}$
+[INSTRUKSI] Hitung $[\\text{OH}^-]$
+$[\\text{OH}^-] = 10^{-3}$ M
 [INSTRUKSI] Hitung pOH
-$\\text{pOH} = -\\log(10^{-3}) = 3$
-[INSTRUKSI] Substitusikan ke rumus pH pada suhu $25°\\text{C}$
-$\\text{pH} = 14 - 3$
-[HASIL] $\\text{pH} = 11$`,
+$\\text{pOH} = 3$
+[HASIL] $\\text{pH} = 14 - 3 = 11$`,
+  gambar: null,
 },
 ```
 
 ---
 
-## 10. CONTOH SOAL LENGKAP (SALAH — JANGAN DITIRU)
+## 10. CONTOH SOAL UTBK (SUB TES PK)
 
 ```js
-// ❌ CONTOH SALAH #1 — jawabanBenar tidak sesuai hasil hitung
 {
-  teks: 'Hitunglah ΔTf glukosa 18g (Mr=180) dalam 500g air, Kf=1.86!',
-  pilihan: ['$0{,}186$°C', '$0{,}372$°C', '$0{,}93$°C', '$1{,}86$°C'],
-  jawabanBenar: 0,   // ❌ 0 = 0.186°C, tapi perhitungan = 0.372°C
-  // n=0.1mol, m=0.1/0.5=0.2 mol/kg, ΔTf=1.86×0.2=0.372 → seharusnya idx=1
-}
-
-// ❌ CONTOH SALAH #2 — penjelasan kontradiksi dengan hasil
-{
-  jawabanBenar: 0,  // pilihan[0] = pH 3.5
-  penjelasan: '...pH = -log(1.68×10^-2) ≈ 1.77... untuk soal ini pH ≈ 3.5',
-  // ❌ Hitung 1.77 tapi simpulkan 3.5 — KONTRADIKSI
-}
-
-// ❌ CONTOH SALAH #3 — variabel C bukan Ma
-{
-  pembahasan: `[RUMUS] $[\\text{H}^+] = \\sqrt{K_a \\times C}$`,
-  // ❌ Gunakan Ma bukan C
-}
-
-// ❌ CONTOH SALAH #4 — tidak ada field kelas
-{
-  mapel: 'kimia', bab: 'bab4',   // kelas XII tapi tidak ada field kelas
-  // ❌ Soal ini akan BERGABUNG dengan paket kimia kelas XI di Admin Panel!
-}
-
-// ✅ YANG BENAR:
-{
-  mapel: 'kimia', kelas: 'XII', bab: 'bab4',
-  // ✅ Admin Panel akan menampilkan kartu terpisah: "Kimia — Kelas XII"
-}
+  mapel: 'pk',        // ← kode sub tes PK
+  kelas: 'UTBK',     // ← WAJIB 'UTBK' untuk semua sub tes SNBT
+  bab: 'bab1',
+  nama_bab: 'PK UTBK 2025 — Penalaran Kuantitatif',
+  teks: r'Jika $4 \div \dfrac{1}{2} = \sqrt{t}$, nilai $t$ sama dengan',
+  pilihan: ['$16$', '$32$', '$64$', '$128$'],
+  jawabanBenar: 2,    // ← index 2 = '$64$'
+  penjelasan: '$4 \\div \\frac{1}{2} = 8 = \\sqrt{t}$, maka $t = 64$.',
+  pembahasan: `[INSTRUKSI] Hitung $4 \\div \\frac{1}{2} = 4 \\times 2 = 8$
+[INSTRUKSI] $\\sqrt{t} = 8 \\Rightarrow t = 8^2$
+[HASIL] $t = 64$`,
+  gambar: null,
+},
 ```
 
 ---
 
-## 11. TIPS MEMBUAT PILIHAN JAWABAN YANG BAIK
+## 11. CONTOH SOAL UTBK DENGAN GAMBAR (PK)
 
-1. **Jawaban benar** harus dihitung matematisnya dulu, baru dibuat pilihan
-2. **Pengecoh** (pilihan salah) harus masuk akal:
-   - Kesalahan konsep umum (misal: lupa faktor `i` untuk elektrolit)
-   - Kesalahan perhitungan umum (misal: lupa pangkat 2, lupa konversi satuan)
-   - Jawaban yang hampir benar (beda satu langkah)
-3. Urutkan pilihan dari kecil ke besar jika berupa angka
-4. Hindari menempatkan jawaban benar selalu di posisi yang sama (variasikan antara A/B/C/D)
+```js
+{
+  mapel: 'pk', kelas: 'UTBK', bab: 'bab1',
+  nama_bab: 'PK UTBK 2025 — Penalaran Kuantitatif',
+  teks: 'Banyaknya persegi pada bangun datar di atas adalah ... *(lihat gambar)*',
+  pilihan: ['$8$', '$10$', '$12$', '$14$'],
+  jawabanBenar: 1,
+  penjelasan: 'Dengan menghitung persegi 1×1, 2×2, dst. diperoleh total 10 persegi.',
+  pembahasan: `[INSTRUKSI] Hitung persegi 1×1, 2×2, 3×3 secara sistematis
+[HASIL] Total persegi $= 10$`,
+  gambar: 'data:image/jpeg;base64,/9j/4AAQ...', // base64 halaman PDF
+},
+```
 
 ---
 
-## 12. RINGKASAN RULES CEPAT
+## 12. CONTOH SOAL UTBK TIPE SAJA (PK/PPU)
+
+Soal tipe "pernyataan yang benar/salah" format SAJA:
+
+```js
+{
+  mapel: 'pk', kelas: 'UTBK', bab: 'bab1',
+  nama_bab: 'PK UTBK 2025 — Penalaran Kuantitatif',
+  teks: 'Di antara pilihan berikut yang merupakan faktor persekutuan adalah ...\n(1) 10\n(2) 14\n(3) 35\n(4) 50',
+  pilihan: [
+    '(1), (2), dan (3) SAJA',
+    '(1) dan (3) SAJA',
+    '(2) dan (4) SAJA',
+    'SEMUA PILIHAN',
+  ],
+  jawabanBenar: 0,
+  penjelasan: 'FPB = 70. Faktor 70: 10✓, 14✓, 35✓, 50✗ → (1),(2),(3) SAJA.',
+  pembahasan: `[INSTRUKSI] Cari FPB kedua bilangan
+$\\text{FPB} = 70$
+[INSTRUKSI] Cek tiap pilihan: 10|70✓, 14|70✓, 35|70✓, 50|70✗
+[HASIL] (1), (2), dan (3) SAJA`,
+  gambar: null,
+},
+```
+
+---
+
+## 13. CONTOH SOAL UTBK TIPE PERBANDINGAN KUANTITAS (PK/PM)
+
+```js
+{
+  mapel: 'pk', kelas: 'UTBK', bab: 'bab1',
+  nama_bab: 'PK UTBK 2025 — Penalaran Kuantitatif',
+  teks: 'Hubungan antara kuantitas P dan Q berikut adalah ...\n\nP = $x^2 - (x^2 + y^2)$\nQ = $17$',
+  pilihan: [
+    'Kuantitas P lebih dari Q',
+    'Kuantitas P kurang dari Q',
+    'Kuantitas P sama dengan Q',
+    'Tidak dapat ditentukan',
+  ],
+  jawabanBenar: 1,
+  penjelasan: '$P = -y^2 \\leq 0 < 17 = Q$, sehingga P selalu kurang dari Q.',
+  pembahasan: `[INSTRUKSI] Sederhanakan P
+$P = x^2 - x^2 - y^2 = -y^2$
+[INSTRUKSI] $-y^2 \\leq 0$ untuk semua $y$, sedangkan $Q = 17 > 0$
+[HASIL] P kurang dari Q`,
+  gambar: null,
+},
+```
+
+---
+
+## 14. CONTOH SOAL UTBK TIPE KECUKUPAN DATA (PK)
+
+```js
+{
+  mapel: 'pk', kelas: 'UTBK', bab: 'bab1',
+  nama_bab: 'PK UTBK 2025 — Penalaran Kuantitatif',
+  teks: 'Apakah terdapat bilangan real $r$ sehingga $f(r) = g(r)$?\nPutuskan apakah pernyataan (1) dan (2) cukup.\n(1) $a + c = 5$\n(2) $2a - c = 7$',
+  pilihan: [
+    'Pernyataan (1) SAJA cukup',
+    'Pernyataan (2) SAJA cukup',
+    'DUA pernyataan BERSAMA-SAMA cukup',
+    'Pernyataan (1) dan (2) tidak cukup',
+  ],
+  jawabanBenar: 1,
+  penjelasan: '(2) $b=5d$ memberikan $\\Delta > 0$ untuk semua $d \\geq 1$, sehingga (2) saja cukup.',
+  pembahasan: `[INSTRUKSI] Syarat ada solusi: diskriminan $\\geq 0$
+$\\Delta = b^2 - 4c \\geq 0$
+[INSTRUKSI] Cek (2): $2a - c = 7 \\Rightarrow c = 2a-7$
+$\\Delta = (a-1)^2 - 4(2a-7) = (a-5)^2 + 4 > 0$ selalu ✓
+[HASIL] Pernyataan (2) SAJA cukup`,
+  gambar: null,
+},
+```
+
+---
+
+## 15. CONTOH SOAL UTBK LBI/LBE (LITERASI)
+
+```js
+{
+  mapel: 'lbe', kelas: 'UTBK', bab: 'bab1',
+  nama_bab: 'LBE Day 1 — Literasi Bahasa Inggris',
+  teks: 'Based on Text 1, what is the main idea of paragraph 2?\n\nA. The benefits of probiotics for gut health\nB. The relationship between diet and mental health\nC. The process of producing fermented foods\nD. The history of probiotic research',
+  pilihan: [
+    'The benefits of probiotics for gut health',
+    'The relationship between diet and mental health',
+    'The process of producing fermented foods',
+    'The history of probiotic research',
+  ],
+  jawabanBenar: 1,
+  penjelasan: 'Paragraph 2 focuses on how diet, especially fermented foods, affects mental health through the gut-brain connection.',
+  pembahasan: `[LANGKAH] Identify the topic of paragraph 2
+The paragraph discusses the link between food consumption and brain health
+[INSTRUKSI] Find the main idea: gut-brain axis and diet's role in mental health
+[HASIL] The relationship between diet and mental health`,
+  gambar: null,
+},
+```
+
+---
+
+## 16. RINGKASAN RULES CEPAT
 
 | Hal | Aturan |
 |---|---|
+| `mapel` untuk UTBK | `'pk'` / `'pm'` / `'pu'` / `'ppu'` / `'pbm'` / `'lbi'` / `'lbe'` |
+| `kelas` untuk UTBK | Selalu `'UTBK'` — wajib agar masuk dropdown Sub Tes |
+| `kelas` untuk sekolah | `'X'` / `'XI'` / `'XII'` |
 | `jawabanBenar` | Index 0–3, hitung dulu baru isi |
 | Desimal | `{,}` bukan `.` dalam LaTeX |
-| Konsentrasi | `M_a` / `M_b` — **bukan** `C` |
 | Backslash LaTeX | Selalu `\\` (double) di dalam string JS |
 | Tag wajib | Setiap soal harus ada `[HASIL]` di pembahasan |
-| Tag urutan | `[RUMUS]` → `[LANGKAH]` → `[INSTRUKSI]` → `[HASIL]` |
-| `penjelasan` | Harus konsisten dengan `pembahasan` dan `jawabanBenar` |
-| Pilihan | Selalu tepat 4 elemen |
-| Padatan/cairan murni | Tidak dimasukkan dalam ekspresi `Kc`/`Kp` |
-| Field `kelas` | Wajib diisi: `'XI'` atau `'XII'` — pisahkan paket antar kelas |
-| Bab numbering | Lanjut dari kelas sebelumnya (kelas XII mulai bab4) |
+| `gambar` | `null` jika tidak ada, atau base64 string jika ada |
+| `pilihan` | Selalu tepat 4 elemen |
+| `nama_bab` UTBK | Format: `'[SubTes] [Paket] — [Label Lengkap]'` |
+| Bab UTBK | `bab1`=paket1, `bab2`=paket2, dst. per sub tes |
