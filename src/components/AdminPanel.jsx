@@ -193,13 +193,54 @@ function ImportModal({ open, onClose, onImport, saving }) {
 
   const parseText = (text) => {
     try {
-      const match = text.match(/(?:const|let|var)\s+\w+\s*=\s*(\[[\s\S]*\])\s*;/);
-      if (!match) return { err:'Array soal tidak ditemukan.' };
-      // eslint-disable-next-line no-eval
-      const arr = eval(match[1]);
-      if (!Array.isArray(arr)||arr.length===0) return { err:'Array kosong.' };
-      return { preview:arr };
-    } catch(e) { return { err:'Gagal parse: '+e.message }; }
+      // Coba eval seluruh file JS sebagai module-like context
+      // Tangkap array dari: const/let/var xxx = [...]; ATAU export default [...]
+      let arr = null;
+
+      // Metode 1: jalankan seluruh teks, tangkap variabel terakhir yang array
+      try {
+        // Hapus export default agar eval tidak error
+        const cleaned = text
+          .replace(/export\s+default\s+\w+\s*;?/g, '')
+          .replace(/export\s+default\s*(\[)/g, 'const __arr__ = $1');
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(cleaned + '\n; return typeof __arr__ !== "undefined" ? __arr__ : null;');
+        const res = fn();
+        if (Array.isArray(res) && res.length > 0) arr = res;
+      } catch(_) {}
+
+      // Metode 2: jika metode 1 gagal, eval seluruh file dan ambil variabel array pertama
+      if (!arr) {
+        try {
+          const cleaned = text.replace(/export\s+default\s+\w+\s*;?/g, '');
+          // eslint-disable-next-line no-new-func
+          const fn = new Function(cleaned + `
+            // Cari variabel array yang didefinisikan
+            const vars = Object.keys(this || {});
+            for (const v of vars) { if (Array.isArray(this[v])) return this[v]; }
+            return null;
+          `);
+          const res = fn.call({});
+          if (Array.isArray(res) && res.length > 0) arr = res;
+        } catch(_) {}
+      }
+
+      // Metode 3: regex fallback — ambil nama variabel lalu eval
+      if (!arr) {
+        const nameMatch = text.match(/(?:const|let|var)\s+(\w+)\s*=/);
+        if (nameMatch) {
+          const varName = nameMatch[1];
+          const cleaned = text.replace(/export\s+default\s+\w+\s*;?/g, '');
+          // eslint-disable-next-line no-new-func
+          const fn = new Function(cleaned + `\nreturn ${varName};`);
+          const res = fn();
+          if (Array.isArray(res) && res.length > 0) arr = res;
+        }
+      }
+
+      if (!arr || arr.length === 0) return { err: 'Array soal tidak ditemukan. Pastikan format file sesuai formatsoal.md' };
+      return { preview: arr };
+    } catch(e) { return { err: 'Gagal parse: ' + e.message }; }
   };
 
   const readFile = (file) => new Promise(resolve=>{
